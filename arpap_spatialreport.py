@@ -27,6 +27,11 @@ import resources_rc
 # Import the code for the dialog
 from arpap_spatialreport_dialog import ARPAP_SpatialReportDialog
 import os.path
+from processing.tools.dataobjects import *
+
+import fTools
+sys.path.append(os.path.abspath(os.path.dirname(fTools.__file__) + '/tools'))
+import ftools_utils
 
 
 class ARPAP_SpatialReport:
@@ -182,15 +187,41 @@ class ARPAP_SpatialReport:
     def oneBackStep(self):
         self.dlg.changeIndex(-1)
         
+    def populateCombosOriginTarget(self):
+        layers = getVectorLayers()
+        self.dlg.originLayerSelect.clear()
+        self.dlg.targetLayerSelect.clear()
+        for vlayer in layers:
+            self.dlg.originLayerSelect.addItem(vlayer.name(),vlayer)
+            self.dlg.targetLayerSelect.addItem(vlayer.name(),vlayer)
+    
+    def outConfigFile( self ):
+        self.dlg.configFileOutput.clear()
+        ( self.shapefileName, self.encoding ) = ftools_utils.saveDialog( self.dlg )
+        if self.shapefileName is None or self.encoding is None:
+          return
+        self.dlg.configFileOutput.setText( self.shapefileName )
+    
+        
     def test(self):
-        print 'pippo'
+        print self.dlg.originLayerSelect.currentIndex()
+        print self.dlg.originLayerSelect.itemData(self.dlg.originLayerSelect.currentIndex())
 
     def run(self):
         
+        QObject.connect(self.dlg.testButton, SIGNAL('pressed()'),self.test)
+        QObject.connect(self.dlg.browseConfigFileButton, SIGNAL('clicked()'),self.outConfigFile)
         QObject.connect(self.dlg.forwardButton, SIGNAL('pressed()'),self.oneForwardStep)
         QObject.connect(self.dlg.backButton, SIGNAL('pressed()'),self.oneBackStep)
-        #self.dlg.forwardButton
+        QObject.connect(self.dlg.geoprocessingIntersectRadio, SIGNAL('released()'),self.dlg.validation.geoprocessingDataType)
+        QObject.connect(self.dlg.geoprocessingTouchRadio, SIGNAL('released()'),self.dlg.validation.geoprocessingDataType)
+        QObject.connect(self.dlg.geoprocessingContainRadio, SIGNAL('released()'),self.dlg.validation.geoprocessingDataType)
         
+        
+        #self.dlg.forwardButton
+        #populate combos
+        self.populateCombosOriginTarget()
+        self.dlg.stackedWidget.setCurrentIndex(0)
         
         # show the dialog
         self.dlg.show()

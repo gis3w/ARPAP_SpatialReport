@@ -25,12 +25,17 @@ import os
 
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import QObject,SIGNAL
+from arpap_validation_inputdata import ValidationInputdata
+from __builtin__ import hasattr
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'arpap_spatialreport_dialog_base.ui'))
 
 
 class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
+    
+    validation = None
+    
     def __init__(self, parent=None):
         """Constructor."""
         super(ARPAP_SpatialReportDialog, self).__init__(parent)
@@ -40,11 +45,16 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+        self.validation = ValidationInputdata(self)
     
     def changeIndex(self,incrementValue):
-        self.stackedWidget.setCurrentIndex(self.stackedWidget.currentIndex() + incrementValue)
-        self.setButtonNavigationStatus()
-    
+        print self.doValidation(self.stackedWidget.currentIndex())
+        if (self.doValidation(self.stackedWidget.currentIndex()) and incrementValue >= 0) or incrementValue < 0:
+            self.stackedWidget.setCurrentIndex(self.stackedWidget.currentIndex() + incrementValue)
+            self.setButtonNavigationStatus()
+        else:
+            self.showValidateErrors()
+            
     def setButtonNavigationStatus(self):
         if self.stackedWidget.currentIndex() == 0:
             self.backButton.setEnabled(False)
@@ -55,3 +65,31 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             self.forwardButton.setEnabled(False)
         else:
             self.forwardButton.setEnabled(True)
+            
+    def doValidation(self,index): 
+        if hasattr(self.validation,'validateStep%s' % (index,)):
+            return getattr(self.validation, 'validateStep%s' % (index,))()
+        else:
+            return True
+        
+    def showValidateErrors(self):
+        self.errorsBrowser.clear()
+        for errMsg in self.validation.errorMessages:
+            self.errorsBrowser.append(errMsg)
+            
+    def getGeoprocessingType(self):
+        rbuttonChecked = None
+        radioGeoprocessingSelectionButtons = ['Intersect','Touch','Contain']
+        for key in radioGeoprocessingSelectionButtons:
+            rbutton = 'geoprocessing' + key + 'Radio'
+            if getattr(self, rbutton).isChecked():
+                return getattr(self, rbutton)
+    
+    def getGeoprocessingTypeData(self):
+        rbutton = self.getGeoprocessingType()
+        return rbutton.text()
+    
+    def getComboboxData(self,nameCombobox):
+        combobox = getattr(self, nameCombobox)
+        return combobox.itemData(combobox.currentIndex())
+        

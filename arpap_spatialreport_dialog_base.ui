@@ -6,97 +6,349 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>651</width>
-    <height>483</height>
+    <width>672</width>
+    <height>612</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>ARPAP SpatialReport</string>
   </property>
-  <widget class="QStackedWidget" name="stackedWidget">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
+  <widget class="QTabWidget" name="tabSaveLoad">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>20</y>
-     <width>621</width>
-     <height>371</height>
+     <x>0</x>
+     <y>10</y>
+     <width>671</width>
+     <height>601</height>
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
-   <widget class="QWidget" name="pageSelectLayer">
-    <widget class="QComboBox" name="comboBox">
+   <widget class="QWidget" name="tabRun">
+    <attribute name="title">
+     <string>Run</string>
+    </attribute>
+    <widget class="QStackedWidget" name="stackedWidget">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="geometry">
       <rect>
-       <x>50</x>
-       <y>20</y>
-       <width>151</width>
-       <height>27</height>
+       <x>10</x>
+       <y>10</y>
+       <width>651</width>
+       <height>371</height>
+      </rect>
+     </property>
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="pageSelectLayer">
+      <widget class="QComboBox" name="originLayerSelect">
+       <property name="geometry">
+        <rect>
+         <x>110</x>
+         <y>80</y>
+         <width>491</width>
+         <height>27</height>
+        </rect>
+       </property>
+       <property name="baseSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+      </widget>
+      <widget class="QLabel" name="labelOriginLayerSelect">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>80</y>
+         <width>91</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="baseSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Origin Layer:</string>
+       </property>
+      </widget>
+      <widget class="QComboBox" name="targetLayerSelect">
+       <property name="geometry">
+        <rect>
+         <x>110</x>
+         <y>200</y>
+         <width>491</width>
+         <height>27</height>
+        </rect>
+       </property>
+       <property name="baseSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+      </widget>
+      <widget class="QLabel" name="labelTargetLayerSelect">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>200</y>
+         <width>91</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="baseSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Target Layer:</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="labelInfoOriginLayer">
+       <property name="geometry">
+        <rect>
+         <x>110</x>
+         <y>110</y>
+         <width>481</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Select origin layer from combobox</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="labelInfoTragetLayer">
+       <property name="geometry">
+        <rect>
+         <x>110</x>
+         <y>230</y>
+         <width>481</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Select target layer from combobox</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="labelTitleStep1">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>10</y>
+         <width>601</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Droid Sans [unknown]</family>
+         <pointsize>18</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>Selection Origin -&gt; Target</string>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="pageSelectOperation">
+      <widget class="QLabel" name="geoprocessingContainsRadio">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>10</y>
+         <width>601</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Droid Sans [unknown]</family>
+         <pointsize>18</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>Selection Geometry operation</string>
+       </property>
+      </widget>
+      <widget class="QRadioButton" name="geoprocessingIntersectRadio">
+       <property name="geometry">
+        <rect>
+         <x>70</x>
+         <y>100</y>
+         <width>104</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="inputMethodHints">
+        <set>Qt::ImhNone</set>
+       </property>
+       <property name="text">
+        <string>Intersection</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+      <widget class="QRadioButton" name="geoprocessingTouchRadio">
+       <property name="geometry">
+        <rect>
+         <x>70</x>
+         <y>150</y>
+         <width>104</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Touch</string>
+       </property>
+      </widget>
+      <widget class="QRadioButton" name="geoprocessingContainRadio">
+       <property name="geometry">
+        <rect>
+         <x>70</x>
+         <y>200</y>
+         <width>104</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Contain</string>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="page"/>
+    </widget>
+    <widget class="QTextBrowser" name="errorsBrowser">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>450</y>
+       <width>651</width>
+       <height>61</height>
       </rect>
      </property>
     </widget>
-   </widget>
-   <widget class="QWidget" name="pageSelectOperation">
-    <widget class="QComboBox" name="comboBox_2">
+    <widget class="QPushButton" name="testButton">
+     <property name="geometry">
+      <rect>
+       <x>300</x>
+       <y>420</y>
+       <width>87</width>
+       <height>27</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>TEST</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="runButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>560</x>
+       <y>530</y>
+       <width>87</width>
+       <height>27</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Run</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="backButton">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>380</x>
-       <y>130</y>
-       <width>78</width>
+       <y>530</y>
+       <width>87</width>
+       <height>27</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Back</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="forwardButton">
+     <property name="geometry">
+      <rect>
+       <x>470</x>
+       <y>530</y>
+       <width>87</width>
+       <height>27</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Forward</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="tab">
+    <attribute name="title">
+     <string>Save/Load</string>
+    </attribute>
+    <widget class="QLineEdit" name="configFileOutput">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>60</y>
+       <width>331</width>
        <height>27</height>
       </rect>
      </property>
     </widget>
+    <widget class="QLabel" name="labelConfigOutputFile">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>40</y>
+       <width>58</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>ConfigFile Save</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="browseConfigFileButton">
+     <property name="geometry">
+      <rect>
+       <x>380</x>
+       <y>60</y>
+       <width>87</width>
+       <height>27</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Browse</string>
+     </property>
+    </widget>
    </widget>
-  </widget>
-  <widget class="QPushButton" name="forwardButton">
-   <property name="geometry">
-    <rect>
-     <x>450</x>
-     <y>430</y>
-     <width>87</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Forward</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="backButton">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>360</x>
-     <y>430</y>
-     <width>87</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Back</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="runButton">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>540</x>
-     <y>430</y>
-     <width>87</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Run</string>
-   </property>
   </widget>
  </widget>
  <resources/>
