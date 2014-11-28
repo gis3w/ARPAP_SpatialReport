@@ -22,20 +22,32 @@
 """
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QObject, SIGNAL
 from PyQt4.QtGui import QAction, QIcon
+from qgis.core import *
+from qgis.gui import *
 # Initialize Qt resources from file resources.py
 import resources_rc
 # Import the code for the dialog
 from arpap_spatialreport_dialog import ARPAP_SpatialReportDialog
 import os.path
 from processing.tools.dataobjects import *
-
+from processing.algs.qgis.QGISAlgorithmProvider import QGISAlgorithmProvider
+from processing.gui.SilentProgress import SilentProgress
+from processing.gui.Postprocessing import handleAlgorithmResults
+from Geoprocessing import Intersection, Touch, Contain
 import fTools
-sys.path.append(os.path.abspath(os.path.dirname(fTools.__file__) + '/tools'))
+if os.path.abspath(os.path.dirname(fTools.__file__) + '/tools') not in sys.path:
+    sys.path.append(os.path.abspath(os.path.dirname(fTools.__file__) + '/tools'))   
 import ftools_utils
 
 
 class ARPAP_SpatialReport:
     """QGIS Plugin Implementation."""
+    
+    GeoprocessingAlgorithms = {
+                               'Intersection':Intersection(),
+                               'Touch':Touch(),
+                               'Contain':Contain()
+                               }
 
     def __init__(self, iface):
         """Constructor.
@@ -65,6 +77,13 @@ class ARPAP_SpatialReport:
 
         # Create the dialog (after translation) and keep reference
         self.dlg = ARPAP_SpatialReportDialog()
+        
+        QObject.connect(self.dlg.testButton, SIGNAL('pressed()'),self.test)
+        QObject.connect(self.dlg.forwardButton, SIGNAL('clicked()'),self.oneForwardStep)
+        QObject.connect(self.dlg.backButton, SIGNAL('clicked()'),self.oneBackStep)
+        QObject.connect(self.dlg.browseConfigFileOutputButton, SIGNAL('clicked()'),self.outConfigFile)
+        QObject.connect(self.dlg.browseConfigFileInputButton, SIGNAL('clicked()'),self.inConfigFile)
+        QObject.connect(self.dlg.runButton, SIGNAL('clicked()'),self.runAlgorithm)
 
         # Declare instance attributes
         self.actions = []
@@ -194,35 +213,80 @@ class ARPAP_SpatialReport:
         for vlayer in layers:
             self.dlg.originLayerSelect.addItem(vlayer.name(),vlayer)
             self.dlg.targetLayerSelect.addItem(vlayer.name(),vlayer)
+            
+    def saveDialog( self,parent, filtering="JSON files (*.json *.JSON)"):
+        settings = QSettings()
+        dirName = settings.value( "/ARPAPGeoprocessing/lastConfigDir" )
+        encode = settings.value( "/ARPAPGeoprocessing/encoding" )
+        fileDialog = QgsEncodingFileDialog( parent, "Save config file", dirName, filtering, encode )
+        fileDialog.setDefaultSuffix( "json" )
+        fileDialog.setFileMode( QFileDialog.AnyFile )
+        fileDialog.setAcceptMode( QFileDialog.AcceptSave )
+        fileDialog.setConfirmOverwrite( True )
+        if not fileDialog.exec_() == QDialog.Accepted:
+                return None, None
+        files = fileDialog.selectedFiles()
+        settings.setValue("/ARPAPGeoprocessing/lastConfigDir", QFileInfo( unicode( files[0] ) ).absolutePath() )
+        return ( unicode( files[0] ), unicode( fileDialog.encoding() ) )
+    
+    def openDialog( self,parent, filtering="JSON files (*.json *.JSON)", dialogMode="SingleFile"):
+        settings = QSettings()
+        dirName = settings.value( "/ARPAPGeoprocessing/lastConfigDir" )
+        encode = settings.value( "/ARPAPGeoprocessing/encoding" )
+        fileDialog = QgsEncodingFileDialog( parent, "Open config file", dirName, filtering, encode )
+        fileDialog.setFileMode( QFileDialog.ExistingFiles )
+        fileDialog.setAcceptMode( QFileDialog.AcceptOpen )
+        if not fileDialog.exec_() == QDialog.Accepted:
+                return None, None
+        files = fileDialog.selectedFiles()
+        settings.setValue("/ARPAPGeoprocessing/lastConfigDir", QFileInfo( unicode( files[0] ) ).absolutePath() )
+        if dialogMode == "SingleFile":
+          return ( unicode( files[0] ), unicode( fileDialog.encoding() ) )
+        else:
+          return ( files, unicode( fileDialog.encoding() ) )
     
     def outConfigFile( self ):
         self.dlg.configFileOutput.clear()
-        ( self.shapefileName, self.encoding ) = ftools_utils.saveDialog( self.dlg )
-        if self.shapefileName is None or self.encoding is None:
+        ( self.jsonFileOutputConfigFile, self.encoding ) = self.saveDialog(self.dlg)
+        if self.jsonFileOutputConfigFile is None or self.encoding is None:
           return
-        self.dlg.configFileOutput.setText( self.shapefileName )
+        self.dlg.configFileOutput.setText( self.jsonFileOutputConfigFile )
     
+    def inConfigFile( self ):
+        self.dlg.configFileInput.clear()
+        ( self.jsonFileInputConfigFile, self.encoding ) = self.openDialog(self.dlg)
+        if self.jsonFileInputConfigFile is None or self.encoding is None:
+          return
+        self.dlg.configFileInput.setText( self.jsonFileInputConfigFile )
+    
+    def runAlgorithm(self):
+        algorithm = self.GeoprocessingAlgorithms[self.dlg.getGeoprocessingTypeData()]
+        algorithm.provider = QGISAlgorithmProvider()
+        algorithm.setParameterValue('ORIGIN',self.dlg.getComboboxData('originLayerSelect'))
+        algorithm.setParameterValue('TARGET',self.dlg.getComboboxData('targetLayerSelect'))
+        algorithm.execute(self.dlg)
+        print algorithm.getOutputValue('OUTPUT')
+        handleAlgorithmResults(algorithm,self.dlg)
+        
         
     def test(self):
-        print self.dlg.originLayerSelect.currentIndex()
-        print self.dlg.originLayerSelect.itemData(self.dlg.originLayerSelect.currentIndex())
+        '''
+        algorithm = self.GeoprocessingAlgorithms['Intersection']
+        algorithm.provider = QGISAlgorithmProvider()
+        algorithm.setParameterValue('ORIGIN',self.dlg.getComboboxData('originLayerSelect'))
+        algorithm.setParameterValue('TARGET',self.dlg.getComboboxData('targetLayerSelect'))
+        algorithm.execute(self.dlg)
+        print algorithm.getOutputValue('OUTPUT')
+        '''
+        self.dlg.addRuntimeStepLog("<tt><span style='color:red'>Test</span></tt>")
+        
 
     def run(self):
-        
-        QObject.connect(self.dlg.testButton, SIGNAL('pressed()'),self.test)
-        QObject.connect(self.dlg.browseConfigFileButton, SIGNAL('clicked()'),self.outConfigFile)
-        QObject.connect(self.dlg.forwardButton, SIGNAL('pressed()'),self.oneForwardStep)
-        QObject.connect(self.dlg.backButton, SIGNAL('pressed()'),self.oneBackStep)
-        QObject.connect(self.dlg.geoprocessingIntersectRadio, SIGNAL('released()'),self.dlg.validation.geoprocessingDataType)
-        QObject.connect(self.dlg.geoprocessingTouchRadio, SIGNAL('released()'),self.dlg.validation.geoprocessingDataType)
-        QObject.connect(self.dlg.geoprocessingContainRadio, SIGNAL('released()'),self.dlg.validation.geoprocessingDataType)
-        
-        
         #self.dlg.forwardButton
         #populate combos
         self.populateCombosOriginTarget()
         self.dlg.stackedWidget.setCurrentIndex(0)
-        
+        self.dlg.setButtonNavigationStatus()
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop

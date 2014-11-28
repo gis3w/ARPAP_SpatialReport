@@ -28,6 +28,8 @@ from PyQt4.QtCore import QObject,SIGNAL
 from arpap_validation_inputdata import ValidationInputdata
 from __builtin__ import hasattr
 
+
+
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'arpap_spatialreport_dialog_base.ui'))
 
@@ -45,13 +47,17 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
-        self.validation = ValidationInputdata(self)
+        self.validation = ValidationInputdata(self,self.tr)
+        QObject.connect(self.geoprocessingIntersectRadio, SIGNAL('released()'),self.doValidationGeoprocessingDataType)
+        QObject.connect(self.geoprocessingTouchRadio, SIGNAL('released()'),self.doValidationGeoprocessingDataType)
+        QObject.connect(self.geoprocessingContainRadio, SIGNAL('released()'),self.doValidationGeoprocessingDataType)
     
     def changeIndex(self,incrementValue):
-        print self.doValidation(self.stackedWidget.currentIndex())
-        if (self.doValidation(self.stackedWidget.currentIndex()) and incrementValue >= 0) or incrementValue < 0:
+        if (self.getValidationStep(self.stackedWidget.currentIndex()) and incrementValue >= 0) or incrementValue < 0:
             self.stackedWidget.setCurrentIndex(self.stackedWidget.currentIndex() + incrementValue)
             self.setButtonNavigationStatus()
+            if self.stackedWidget.currentIndex() == 1:
+                self.doValidationGeoprocessingDataType()
         else:
             self.showValidateErrors()
             
@@ -63,19 +69,31 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         
         if self.stackedWidget.currentIndex() == self.stackedWidget.count() - 1:
             self.forwardButton.setEnabled(False)
+            self.runButton.setEnabled(True)
         else:
             self.forwardButton.setEnabled(True)
+            self.runButton.setEnabled(False)
             
-    def doValidation(self,index): 
+    def getValidationStep(self,index): 
         if hasattr(self.validation,'validateStep%s' % (index,)):
             return getattr(self.validation, 'validateStep%s' % (index,))()
         else:
             return True
+    
+    def doValidationGeoprocessingDataType(self): 
+        if not self.validation.geoprocessingDataType():
+            self.showValidateErrors()
+        
+    def addLogMessage(self,logMessage):
+        self.logBrowser.clear()
+        self.logBrowser.append(logMessage)
+    
+    def addRuntimeStepLog(self,runtimeStepLog):
+        self.runtimeStepBrowser.clear()
+        self.runtimeStepBrowser.append(runtimeStepLog)
         
     def showValidateErrors(self):
-        self.errorsBrowser.clear()
-        for errMsg in self.validation.errorMessages:
-            self.errorsBrowser.append(errMsg)
+        QtGui.QMessageBox.warning( self, self.tr("ARPA Spatial Report"), self.tr( "Validation error:\n" ) + ';\n'.join(self.validation.getErrors()) )
             
     def getGeoprocessingType(self):
         rbuttonChecked = None
@@ -92,4 +110,13 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     def getComboboxData(self,nameCombobox):
         combobox = getattr(self, nameCombobox)
         return combobox.itemData(combobox.currentIndex())
+    
+    def setPercentage(self,i):
+        if self.progressBar.maximum() == 0:
+            self.progressBar.setMaximum(100)
+        self.progressBar.setValue(i)
+        
+    def setText(self,text):
+        self.labelProgress.setText(text)
+
         
