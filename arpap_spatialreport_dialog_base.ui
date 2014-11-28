@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>548</width>
-    <height>376</height>
+    <width>611</width>
+    <height>551</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -43,7 +43,7 @@
           <bool>true</bool>
          </property>
          <property name="currentIndex">
-          <number>4</number>
+          <number>2</number>
          </property>
          <widget class="QWidget" name="pageSelectLayer">
           <layout class="QGridLayout" name="gridLayout_3">
@@ -202,6 +202,63 @@
              </property>
              <property name="text">
               <string>Selection fields</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="labelOutputLayerFields">
+             <property name="text">
+              <string>Output fields</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelOriginLayerFields">
+             <property name="text">
+              <string>Origin layer fields</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLabel" name="labelTargetLayerFields">
+             <property name="text">
+              <string>Target layer fields</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QListWidget" name="listWidgetOriginLayerFields">
+             <property name="acceptDrops">
+              <bool>true</bool>
+             </property>
+             <property name="dragDropMode">
+              <enum>QAbstractItemView::NoDragDrop</enum>
+             </property>
+             <property name="viewMode">
+              <enum>QListView::ListMode</enum>
+             </property>
+             <property name="batchSize">
+              <number>100</number>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0" colspan="2">
+            <widget class="QListWidget" name="listWidgetOutputLayerFields">
+             <property name="dragDropOverwriteMode">
+              <bool>true</bool>
+             </property>
+             <property name="dragDropMode">
+              <enum>QAbstractItemView::DragDrop</enum>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QListWidget" name="listWidgetTargetLayerFields">
+             <property name="acceptDrops">
+              <bool>false</bool>
+             </property>
+             <property name="dragDropMode">
+              <enum>QAbstractItemView::NoDragDrop</enum>
              </property>
             </widget>
            </item>

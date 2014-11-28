@@ -1,7 +1,8 @@
 import sys
 import os.path
 import fTools
-sys.path.append(os.path.abspath(os.path.dirname(fTools.__file__) + '/tools'))
+if os.path.abspath(os.path.dirname(fTools.__file__) + '/tools') not in sys.path:
+    sys.path.append(os.path.abspath(os.path.dirname(fTools.__file__) + '/tools')) 
 from ftools_utils  import getVectorTypeAsString
 
 class ValidationInputdata():

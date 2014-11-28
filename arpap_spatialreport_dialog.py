@@ -22,11 +22,16 @@
 """
 
 import os
-
+import sys
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import QObject,SIGNAL
 from arpap_validation_inputdata import ValidationInputdata
 from __builtin__ import hasattr
+import fTools
+from PySide.QtGui import QStandardItem
+if os.path.abspath(os.path.dirname(fTools.__file__) + '/tools') not in sys.path:
+    sys.path.append(os.path.abspath(os.path.dirname(fTools.__file__) + '/tools')) 
+from ftools_utils  import getVectorTypeAsString
 
 
 
@@ -58,8 +63,20 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             self.setButtonNavigationStatus()
             if self.stackedWidget.currentIndex() == 1:
                 self.doValidationGeoprocessingDataType()
+            elif self.stackedWidget.currentIndex() == 2:
+                self.populateFieldsLists()
         else:
             self.showValidateErrors()
+            
+    def populateFieldsLists(self):
+        fields = self.getComboboxData('originLayerSelect').dataProvider().fields()
+        for f in fields:
+            item = QtGui.QListWidgetItem()
+            #item.setCheckable(True)
+            item.setText(f.name())
+            self.listWidgetOriginLayerFields.addItem(item)
+            
+        
             
     def setButtonNavigationStatus(self):
         if self.stackedWidget.currentIndex() == 0:
@@ -70,6 +87,7 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         if self.stackedWidget.currentIndex() == self.stackedWidget.count() - 1:
             self.forwardButton.setEnabled(False)
             self.runButton.setEnabled(True)
+            self.createRuntimeStepLog()
         else:
             self.forwardButton.setEnabled(True)
             self.runButton.setEnabled(False)
@@ -89,7 +107,6 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         self.logBrowser.append(logMessage)
     
     def addRuntimeStepLog(self,runtimeStepLog):
-        self.runtimeStepBrowser.clear()
         self.runtimeStepBrowser.append(runtimeStepLog)
         
     def showValidateErrors(self):
@@ -118,5 +135,27 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         
     def setText(self,text):
         self.labelProgress.setText(text)
-
+        
+    def getCurrentInputValues(self):
+        toRet = {}
+        #get stpe1 values
+        toRet['step0']={
+                        'originLayerSelect':self.getComboboxData('originLayerSelect'),
+                        'targetLayerSelect':self.getComboboxData('targetLayerSelect'),
+                        }
+        #get stpe2 values
+        toRet['step1']={
+                        'geoprocessingTypeData':self.getGeoprocessingTypeData()
+                        }
+        return toRet
+        
+    def createRuntimeStepLog(self):
+        #take current inputs values
+        currentInputValues = self.getCurrentInputValues()
+        print currentInputValues
+        self.runtimeStepBrowser.clear()
+        self.addRuntimeStepLog("<h3>STEP1:</h3>")
+        self.addRuntimeStepLog("<span>ORIGIN LAYER: %s (<b>%s</b>)[] </span>" % (currentInputValues['step0']['originLayerSelect'].name(),getVectorTypeAsString(currentInputValues['step0']['originLayerSelect'])))
+        self.addRuntimeStepLog("<span>TARGET LAYER: %s (<b>%s</b>)[] </span>" % (currentInputValues['step0']['targetLayerSelect'].name(),getVectorTypeAsString(currentInputValues['step0']['targetLayerSelect'])))
+        
         

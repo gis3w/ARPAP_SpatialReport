@@ -65,7 +65,48 @@ class Touch(Intersection):
                           [ParameterVector.VECTOR_TYPE_ANY]))
         self.addOutput(OutputVector(self.OUTPUT, 'Touch'))
 
-class Contain(Intersection):
+class Contain(Touch):
+    
+    def processAlgorithm(self, progress):
+        vlayerA = dataobjects.getObjectFromUri(
+                self.getParameterValue(self.INPUT))
+        vlayerB = dataobjects.getObjectFromUri(
+                self.getParameterValue(self.INPUT2))
+        vproviderA = vlayerA.dataProvider()
+
+        fields = vector.combineVectorFields(vlayerA, vlayerB)
+        writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(fields,
+                vproviderA.geometryType(), vproviderA.crs())
+        inFeatA = QgsFeature()
+        inFeatB = QgsFeature()
+        outFeat = QgsFeature()
+        nElement = 0
+        selectionA = vector.features(vlayerA)
+        selectionB = vector.features(vlayerB)
+        nFeat = len(selectionA)
+        for inFeatA in selectionA:
+            nElement += 1
+            progress.setPercentage(nElement / float(nFeat) * 100)
+            geom = QgsGeometry(inFeatA.geometry())
+            atMapA = inFeatA.attributes()
+            for inFeatB in selectionB:
+                geomTarget = QgsGeometry(inFeatB.geometry())
+                try:
+                    if geomTarget.contains(geom):
+                        atMapB = inFeatB.attributes()
+                        try:
+                            outFeat.setGeometry(geom)
+                            attrs = []
+                            attrs.extend(atMapA)
+                            attrs.extend(atMapB)
+                            outFeat.setAttributes(attrs)
+                            writer.addFeature(outFeat)
+                        except:
+                            ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Feature geometry error: One or more output features ignored due to invalid geometry.')
+                            continue
+                except:
+                    break
+        del writer
     
     def defineCharacteristics(self):
         self.name = 'Contain'
