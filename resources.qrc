@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/plugins/ARPAP_SpatialReport" >
         <file>icons/icon.png</file>
+        <file>icons/mActionCalculateField.png</file>
     </qresource>
 </RCC>

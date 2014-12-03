@@ -44,9 +44,9 @@ class ARPAP_SpatialReport:
     """QGIS Plugin Implementation."""
     
     GeoprocessingAlgorithms = {
-                               'Intersection':Intersection(),
-                               'Touch':Touch(),
-                               'Contain':Contain()
+                               'Intersection':Intersection,
+                               'Touch':Touch,
+                               'Contain':Contain
                                }
 
     def __init__(self, iface):
@@ -260,25 +260,22 @@ class ARPAP_SpatialReport:
         self.dlg.configFileInput.setText( self.jsonFileInputConfigFile )
     
     def runAlgorithm(self):
-        algorithm = self.GeoprocessingAlgorithms[self.dlg.getGeoprocessingTypeData()]
+        algorithm = self.GeoprocessingAlgorithms[self.dlg.getGeoprocessingTypeData()]()
         algorithm.provider = QGISAlgorithmProvider()
         algorithm.setParameterValue('ORIGIN',self.dlg.getComboboxData('originLayerSelect'))
         algorithm.setParameterValue('TARGET',self.dlg.getComboboxData('targetLayerSelect'))
+        algorithm.setParameterValue('FIELDSORIGIN',self.dlg.getSelectedFields('tableViewOriginLayerFields'))
+        algorithm.setParameterValue('FIELDSTARGET',self.dlg.getSelectedFields('tableViewTargetLayerFields'))
         algorithm.execute(self.dlg)
         print algorithm.getOutputValue('OUTPUT')
         handleAlgorithmResults(algorithm,self.dlg)
         
         
+        
     def test(self):
-        '''
-        algorithm = self.GeoprocessingAlgorithms['Intersection']
-        algorithm.provider = QGISAlgorithmProvider()
-        algorithm.setParameterValue('ORIGIN',self.dlg.getComboboxData('originLayerSelect'))
-        algorithm.setParameterValue('TARGET',self.dlg.getComboboxData('targetLayerSelect'))
-        algorithm.execute(self.dlg)
-        print algorithm.getOutputValue('OUTPUT')
-        '''
-        self.dlg.addRuntimeStepLog("<tt><span style='color:red'>Test</span></tt>")
+        fields = self.dlg.getSelectedFields('tableViewOriginLayerFields')
+        print fields[0].name()
+        
         
 
     def run(self):

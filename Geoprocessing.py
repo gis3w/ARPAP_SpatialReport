@@ -2,14 +2,46 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
 from processing.algs.qgis.Intersection import Intersection as ProcessingIntersection
-from processing.core.parameters import ParameterVector
+from processing.core.parameters import ParameterVector, Parameter
 from processing.core.outputs import OutputVector
 from processing.core.ProcessingLog import ProcessingLog
 from processing.tools import dataobjects, vector
 
+class ParameterList(Parameter):
+
+    def __init__(self, name='', description=''):
+        Parameter.__init__(self, name, description)
+        self.value = None
+
+    def setValue(self, value):
+        self.value = value
+        return True
+
+    def getValueAsCommandLineParameter(self):
+        return '"' + unicode(self.value) + '"'
+
+def combineVectorFields(fieldsA, fieldsB):
+    fields = []
+    fields.extend(fieldsA)
+    namesA = [unicode(f.name()).lower() for f in fieldsA]
+    for field in fieldsB:
+        name = unicode(field.name()).lower()
+        if name in namesA:
+            idx = 2
+            newName = name + '_' + unicode(idx)
+            while newName in namesA:
+                idx += 1
+                newName = name + '_' + unicode(idx)
+            field = QgsField(newName, field.type(), field.typeName())
+        fields.append(field)
+
+    return fields
+
 class Intersection(ProcessingIntersection):
     INPUT = 'ORIGIN'
     INPUT2 = 'TARGET'
+    FIELDSINPUT1 = 'FIELDSORIGIN'
+    FIELDSINPUT2 = 'FIELDSTARGET'
     OUTPUT = 'OUTPUT'
 
 class Touch(Intersection):
@@ -19,9 +51,10 @@ class Touch(Intersection):
                 self.getParameterValue(self.INPUT))
         vlayerB = dataobjects.getObjectFromUri(
                 self.getParameterValue(self.INPUT2))
+        fieldsLayerA = self.getParameterValue(self.FIELDSINPUT1)
+        fieldsLayerB = self.getParameterValue(self.FIELDSINPUT2)
         vproviderA = vlayerA.dataProvider()
-
-        fields = vector.combineVectorFields(vlayerA, vlayerB)
+        fields = combineVectorFields(fieldsLayerA, fieldsLayerB)
         writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(fields,
                 vproviderA.geometryType(), vproviderA.crs())
         inFeatA = QgsFeature()
@@ -63,6 +96,8 @@ class Touch(Intersection):
         self.addParameter(ParameterVector(self.INPUT2,
                           'Touch layer',
                           [ParameterVector.VECTOR_TYPE_ANY]))
+        self.addParameter(ParameterList(self.FIELDSINPUT1,'Fields Input Layer'))
+        self.addParameter(ParameterList(self.FIELDSINPUT2,'Fields Touch Layer'))
         self.addOutput(OutputVector(self.OUTPUT, 'Touch'))
 
 class Contain(Touch):
@@ -72,9 +107,11 @@ class Contain(Touch):
                 self.getParameterValue(self.INPUT))
         vlayerB = dataobjects.getObjectFromUri(
                 self.getParameterValue(self.INPUT2))
+        fieldsLayerA = self.getParameterValue(self.FIELDSINPUT1)
+        fieldsLayerB = self.getParameterValue(self.FIELDSINPUT2)
         vproviderA = vlayerA.dataProvider()
 
-        fields = vector.combineVectorFields(vlayerA, vlayerB)
+        fields = combineVectorFields(fieldsLayerA, fieldsLayerB)
         writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(fields,
                 vproviderA.geometryType(), vproviderA.crs())
         inFeatA = QgsFeature()
@@ -116,4 +153,6 @@ class Contain(Touch):
         self.addParameter(ParameterVector(self.INPUT2,
                           'Touch layer',
                           [ParameterVector.VECTOR_TYPE_ANY]))
+        self.addParameter(ParameterList(self.FIELDSINPUT1,'Fields Input Layer'))
+        self.addParameter(ParameterList(self.FIELDSINPUT2,'Fields Touch Layer'))
         self.addOutput(OutputVector(self.OUTPUT, 'Contain'))

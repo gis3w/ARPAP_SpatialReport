@@ -24,15 +24,18 @@
 import os
 import sys
 from PyQt4 import QtGui, uic
-from PyQt4.QtCore import QObject,SIGNAL
+from PyQt4.QtCore import QObject,SIGNAL, Qt
 from arpap_validation_inputdata import ValidationInputdata
-from __builtin__ import hasattr
+from __builtin__ import hasattr, getattr
 import fTools
-from PySide.QtGui import QStandardItem
 if os.path.abspath(os.path.dirname(fTools.__file__) + '/tools') not in sys.path:
     sys.path.append(os.path.abspath(os.path.dirname(fTools.__file__) + '/tools')) 
 from ftools_utils  import getVectorTypeAsString
+from qgis.core import *
+from qgis.gui import *
+import resources_rc
 
+from arpap_spatialreport_fieldcalculator_dialog import ARPAP_SpatialReportFieldCalculatorDialog
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -42,6 +45,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     
     validation = None
+    headersFieldsTable = ['Field name','Data type','Length','Precision','Actions']
     
     def __init__(self, parent=None):
         """Constructor."""
@@ -52,10 +56,16 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+        self.fieldCalculatorOriginButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/mActionCalculateField.png'))
+        self.fieldCalculatorTargetButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/mActionCalculateField.png'))
         self.validation = ValidationInputdata(self,self.tr)
         QObject.connect(self.geoprocessingIntersectRadio, SIGNAL('released()'),self.doValidationGeoprocessingDataType)
         QObject.connect(self.geoprocessingTouchRadio, SIGNAL('released()'),self.doValidationGeoprocessingDataType)
         QObject.connect(self.geoprocessingContainRadio, SIGNAL('released()'),self.doValidationGeoprocessingDataType)
+        QObject.connect(self.fieldCalculatorOriginButton, SIGNAL('clicked()'),self.openFieldCalculatorOrigin)
+        QObject.connect(self.fieldCalculatorTargetButton, SIGNAL('clicked()'),self.openFieldCalculatorTarget)
+        QObject.connect(self.originLayerSelect, SIGNAL('currentIndexChanged(int)'),self.populateOriginFieldsLists)
+        QObject.connect(self.targetLayerSelect, SIGNAL('currentIndexChanged(int)'),self.populateTargetFieldsLists)
     
     def changeIndex(self,incrementValue):
         if (self.getValidationStep(self.stackedWidget.currentIndex()) and incrementValue >= 0) or incrementValue < 0:
@@ -63,20 +73,43 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             self.setButtonNavigationStatus()
             if self.stackedWidget.currentIndex() == 1:
                 self.doValidationGeoprocessingDataType()
-            elif self.stackedWidget.currentIndex() == 2:
-                self.populateFieldsLists()
         else:
             self.showValidateErrors()
             
-    def populateFieldsLists(self):
-        fields = self.getComboboxData('originLayerSelect').dataProvider().fields()
-        for f in fields:
-            item = QtGui.QListWidgetItem()
-            #item.setCheckable(True)
-            item.setText(f.name())
-            self.listWidgetOriginLayerFields.addItem(item)
-            
+    def populateOriginFieldsLists(self):
+       self._populateTableFieldsList('originLayerSelect', self.tableViewOriginLayerFields)
+    
+    def populateTargetFieldsLists(self):
+       self._populateTableFieldsList('targetLayerSelect', self.tableViewTargetLayerFields)
         
+    def _populateTableFieldsList(self,comboName,tableView):
+        headersFieldsTable = ['Field name','Data type','Length','Precision','Actions']
+        fields = self.getComboboxData(comboName).dataProvider().fields()            
+        model = QtGui.QStandardItemModel(tableView)
+        for columnName in headersFieldsTable:
+            model.setHorizontalHeaderItem(headersFieldsTable.index(columnName),QtGui.QStandardItem(columnName))
+        tableView.setModel(model)
+        for f in fields:
+            itemName = QtGui.QStandardItem(f.name())
+            itemName.setData(f)
+            itemName.setCheckable(True)
+            itemName.setCheckState(Qt.Checked)
+            itemName.setSelectable(False)
+            itemName.setEditable(False)
+            itemType = QtGui.QStandardItem(f.typeName())
+            itemLength = QtGui.QStandardItem(str(f.length()))
+            itemPrecision = QtGui.QStandardItem(str(f.precision()))
+            model.appendRow([itemName,itemType,itemLength,itemPrecision])
+            
+    def getSelectedFields(self,layer):
+        tableView = getattr(self,layer)
+        model = tableView.model()
+        fieldsToRet = []
+        for r in range(model.rowCount()):
+            item = model.item(r,0)
+            if item.checkState() == Qt.Checked:
+                fieldsToRet.append(item.data())
+        return fieldsToRet
             
     def setButtonNavigationStatus(self):
         if self.stackedWidget.currentIndex() == 0:
@@ -157,5 +190,19 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         self.addRuntimeStepLog("<h3>STEP1:</h3>")
         self.addRuntimeStepLog("<span>ORIGIN LAYER: %s (<b>%s</b>)[] </span>" % (currentInputValues['step0']['originLayerSelect'].name(),getVectorTypeAsString(currentInputValues['step0']['originLayerSelect'])))
         self.addRuntimeStepLog("<span>TARGET LAYER: %s (<b>%s</b>)[] </span>" % (currentInputValues['step0']['targetLayerSelect'].name(),getVectorTypeAsString(currentInputValues['step0']['targetLayerSelect'])))
+    
+    def openFieldCalculatorOrigin(self):
+        self.openFieldCalculator('origin')
+        #fieldCalculatorDialog.show()
+    
+    def openFieldCalculatorTarget(self):
+        self.openFieldCalculator('target')
+    
+    def openFieldCalculator(self,source='origin'):
+        fieldCalculatorDialog =  ARPAP_SpatialReportFieldCalculatorDialog(self.getComboboxData(source+'LayerSelect'))
+        result = fieldCalculatorDialog.exec_()
+        if result == QtGui.QDialog.Accepted:
+            print fieldCalculatorDialog.mOutputFieldTypeComboBox.currentIndex()
         
+
         
