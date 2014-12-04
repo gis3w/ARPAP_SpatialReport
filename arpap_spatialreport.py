@@ -8,7 +8,7 @@
         begin                : 2014-11-20
         git sha              : $Format:%H$
         copyright            : (C) 2014 by Walter Lorenzetti GIS3W
-        email                : lorenzetti@gis3w.it
+        email                : lorenzetti at gis3w dot it
  ***************************************************************************/
 
 /***************************************************************************
@@ -33,11 +33,7 @@ from processing.tools.dataobjects import *
 from processing.algs.qgis.QGISAlgorithmProvider import QGISAlgorithmProvider
 from processing.gui.SilentProgress import SilentProgress
 from processing.gui.Postprocessing import handleAlgorithmResults
-from Geoprocessing import Intersection, Touch, Contain
-import fTools
-if os.path.abspath(os.path.dirname(fTools.__file__) + '/tools') not in sys.path:
-    sys.path.append(os.path.abspath(os.path.dirname(fTools.__file__) + '/tools'))   
-import ftools_utils
+from arpap_geoprocessing import Intersection, Touch, Contain
 
 
 class ARPAP_SpatialReport:
@@ -50,13 +46,6 @@ class ARPAP_SpatialReport:
                                }
 
     def __init__(self, iface):
-        """Constructor.
-
-        :param iface: An interface instance that will be passed to this class
-            which provides the hook by which you can manipulate the QGIS
-            application at run time.
-        :type iface: QgsInterface
-        """
         # Save reference to the QGIS interface
         self.iface = iface
         # initialize plugin directory
@@ -79,8 +68,6 @@ class ARPAP_SpatialReport:
         self.dlg = ARPAP_SpatialReportDialog()
         
         QObject.connect(self.dlg.testButton, SIGNAL('pressed()'),self.test)
-        QObject.connect(self.dlg.forwardButton, SIGNAL('clicked()'),self.oneForwardStep)
-        QObject.connect(self.dlg.backButton, SIGNAL('clicked()'),self.oneBackStep)
         QObject.connect(self.dlg.browseConfigFileOutputButton, SIGNAL('clicked()'),self.outConfigFile)
         QObject.connect(self.dlg.browseConfigFileInputButton, SIGNAL('clicked()'),self.inConfigFile)
         QObject.connect(self.dlg.runButton, SIGNAL('clicked()'),self.runAlgorithm)
@@ -200,19 +187,6 @@ class ARPAP_SpatialReport:
                 action)
             self.iface.removeToolBarIcon(action)
 
-    def oneForwardStep(self):
-        self.dlg.changeIndex(1)
-        
-    def oneBackStep(self):
-        self.dlg.changeIndex(-1)
-        
-    def populateCombosOriginTarget(self):
-        layers = getVectorLayers()
-        self.dlg.originLayerSelect.clear()
-        self.dlg.targetLayerSelect.clear()
-        for vlayer in layers:
-            self.dlg.originLayerSelect.addItem(vlayer.name(),vlayer)
-            self.dlg.targetLayerSelect.addItem(vlayer.name(),vlayer)
             
     def saveDialog( self,parent, filtering="JSON files (*.json *.JSON)"):
         settings = QSettings()
@@ -280,8 +254,6 @@ class ARPAP_SpatialReport:
 
     def run(self):
         #self.dlg.forwardButton
-        #populate combos
-        self.populateCombosOriginTarget()
         self.dlg.stackedWidget.setCurrentIndex(0)
         self.dlg.setButtonNavigationStatus()
         # show the dialog

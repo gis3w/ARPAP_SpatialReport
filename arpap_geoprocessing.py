@@ -1,3 +1,30 @@
+# -*- coding: utf-8 -*-
+"""
+***************************************************************************
+    arpap_geoprocessing.py
+    ---------------------
+    Date                 : December 2014
+    Copyright            : (C) 2014 by Walter Lorenzetti Gis3W
+    Email                : lorenzetti at gis3w dot it
+***************************************************************************
+*                                                                         *
+*   This program is free software; you can redistribute it and/or modify  *
+*   it under the terms of the GNU General Public License as published by  *
+*   the Free Software Foundation; either version 2 of the License, or     *
+*   (at your option) any later version.                                   *
+*                                                                         *
+***************************************************************************
+"""
+
+__author__ = 'Walter Lorenzetti'
+__date__ = 'December 2014'
+__copyright__ = '(C) 2014, Walter Lorenzetti Gis3w'
+
+# This will get replaced with a git SHA1 when you do a git archive
+ 
+__revision__ = '$Format:%H$'
+
+
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *

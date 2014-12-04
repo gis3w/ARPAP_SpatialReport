@@ -27,6 +27,7 @@ from PyQt4 import QtGui, uic
 from PyQt4.QtCore import QObject,SIGNAL, Qt
 from arpap_validation_inputdata import ValidationInputdata
 from __builtin__ import hasattr, getattr
+from processing.tools.dataobjects import *
 import fTools
 if os.path.abspath(os.path.dirname(fTools.__file__) + '/tools') not in sys.path:
     sys.path.append(os.path.abspath(os.path.dirname(fTools.__file__) + '/tools')) 
@@ -66,6 +67,9 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         QObject.connect(self.fieldCalculatorTargetButton, SIGNAL('clicked()'),self.openFieldCalculatorTarget)
         QObject.connect(self.originLayerSelect, SIGNAL('currentIndexChanged(int)'),self.populateOriginFieldsLists)
         QObject.connect(self.targetLayerSelect, SIGNAL('currentIndexChanged(int)'),self.populateTargetFieldsLists)
+        QObject.connect(self.forwardButton, SIGNAL('clicked()'),self.oneForwardStep)
+        QObject.connect(self.backButton, SIGNAL('clicked()'),self.oneBackStep)
+        self.populateCombosOriginTarget()
     
     def changeIndex(self,incrementValue):
         if (self.getValidationStep(self.stackedWidget.currentIndex()) and incrementValue >= 0) or incrementValue < 0:
@@ -75,12 +79,28 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
                 self.doValidationGeoprocessingDataType()
         else:
             self.showValidateErrors()
+    
+    def oneForwardStep(self):
+        self.changeIndex(1)
+        
+    def oneBackStep(self):
+        self.changeIndex(-1)
+            
+    def populateCombosOriginTarget(self):
+        layers = getVectorLayers()
+        self.originLayerSelect.clear()
+        self.targetLayerSelect.clear()
+        for vlayer in layers:
+            self.originLayerSelect.addItem(vlayer.name(),vlayer)
+            self.targetLayerSelect.addItem(vlayer.name(),vlayer)
             
     def populateOriginFieldsLists(self):
-       self._populateTableFieldsList('originLayerSelect', self.tableViewOriginLayerFields)
+        if hasattr(self.getComboboxData('originLayerSelect'),'dataProvider'):
+            self._populateTableFieldsList('originLayerSelect', self.tableViewOriginLayerFields)
     
     def populateTargetFieldsLists(self):
-       self._populateTableFieldsList('targetLayerSelect', self.tableViewTargetLayerFields)
+        if hasattr(self.getComboboxData('targetLayerSelect'),'dataProvider'):
+            self._populateTableFieldsList('targetLayerSelect', self.tableViewTargetLayerFields)
         
     def _populateTableFieldsList(self,comboName,tableView):
         headersFieldsTable = ['Field name','Data type','Length','Precision','Actions']
