@@ -218,6 +218,22 @@ class ARPAP_SpatialReport:
           return ( unicode( files[0] ), unicode( fileDialog.encoding() ) )
         else:
           return ( files, unicode( fileDialog.encoding() ) )
+      
+    def openShapeFileDialog( self,parent, filtering="Shape files (*.shp *.SHP)", dialogMode="SingleFile"):
+        settings = QSettings()
+        dirName = settings.value( "/ARPAPGeoprocessing/lastShapeDir" )
+        encode = settings.value( "/ARPAPGeoprocessing/encoding" )
+        fileDialog = QgsEncodingFileDialog( parent, "Open shape file", dirName, filtering, encode )
+        fileDialog.setFileMode( QFileDialog.ExistingFiles )
+        fileDialog.setAcceptMode( QFileDialog.AcceptOpen )
+        if not fileDialog.exec_() == QDialog.Accepted:
+                return None, None
+        files = fileDialog.selectedFiles()
+        settings.setValue("/ARPAPGeoprocessing/lastShapeDir", QFileInfo( unicode( files[0] ) ).absolutePath() )
+        if dialogMode == "SingleFile":
+          return ( unicode( files[0] ), unicode( fileDialog.encoding() ) )
+        else:
+          return ( files, unicode( fileDialog.encoding() ) )
     
     def outConfigFile( self ):
         self.dlg.configFileOutput.clear()
@@ -240,6 +256,12 @@ class ARPAP_SpatialReport:
         algorithm.setParameterValue('TARGET',self.dlg.getComboboxData('targetLayerSelect'))
         algorithm.setParameterValue('FIELDSORIGIN',self.dlg.getSelectedFields('tableViewOriginLayerFields'))
         algorithm.setParameterValue('FIELDSTARGET',self.dlg.getSelectedFields('tableViewTargetLayerFields'))
+        print self.dlg.getOutputType()
+        if self.dlg.getOutputType() == 'Shape File':
+            outputFile = self.dlg.outputShapeFile.text()
+        elif self.dlg.getOutputType() == 'Spatialite':
+            outputFile = self.dlg.outputSpatialite.text()
+        algorithm.setOutputValue('OUTPUT',outputFile)
         algorithm.execute(self.dlg)
         print algorithm.getOutputValue('OUTPUT')
         handleAlgorithmResults(algorithm,self.dlg)
@@ -254,6 +276,7 @@ class ARPAP_SpatialReport:
 
     def run(self):
         #self.dlg.forwardButton
+        self.dlg.populateCombosOriginTarget()
         self.dlg.stackedWidget.setCurrentIndex(0)
         self.dlg.setButtonNavigationStatus()
         # show the dialog

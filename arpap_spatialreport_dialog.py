@@ -46,16 +46,12 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     
     validation = None
+    radioGeoprocessingSelectionButtons = ['Intersect','Touch','Contain']
+    outputItemsSelect = ['Shape File','Spatialite','Postgis']
     headersFieldsTable = ['Field name','Data type','Length','Precision','Actions']
     
     def __init__(self, parent=None):
-        """Constructor."""
         super(ARPAP_SpatialReportDialog, self).__init__(parent)
-        # Set up the user interface from Designer.
-        # After setupUI you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
         self.fieldCalculatorOriginButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/mActionCalculateField.png'))
         self.fieldCalculatorTargetButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/mActionCalculateField.png'))
@@ -69,7 +65,10 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         QObject.connect(self.targetLayerSelect, SIGNAL('currentIndexChanged(int)'),self.populateTargetFieldsLists)
         QObject.connect(self.forwardButton, SIGNAL('clicked()'),self.oneForwardStep)
         QObject.connect(self.backButton, SIGNAL('clicked()'),self.oneBackStep)
-        self.populateCombosOriginTarget()
+        QObject.connect(self.outputShapeFileButton, SIGNAL('clicked()'),self.openOutputShapeFileDialog)
+        QObject.connect(self.outputSpatialiteButton, SIGNAL('clicked()'),self.openOutputSpatialiteDialog)
+        self.populateCombosOutputType()
+        QObject.connect(self.selectOutputType, SIGNAL('currentIndexChanged(int)'),self.showOutputForm)
     
     def changeIndex(self,incrementValue):
         if (self.getValidationStep(self.stackedWidget.currentIndex()) and incrementValue >= 0) or incrementValue < 0:
@@ -77,6 +76,8 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             self.setButtonNavigationStatus()
             if self.stackedWidget.currentIndex() == 1:
                 self.doValidationGeoprocessingDataType()
+            elif self.stackedWidget.currentIndex() == 3:
+                self.showOutputForm(self.selectOutputType.currentIndex())
         else:
             self.showValidateErrors()
     
@@ -93,6 +94,16 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         for vlayer in layers:
             self.originLayerSelect.addItem(vlayer.name(),vlayer)
             self.targetLayerSelect.addItem(vlayer.name(),vlayer)
+            
+    def populateCombosOutputType(self):
+        for type in self.outputItemsSelect:
+            self.selectOutputType.addItem(type)
+            
+    def showOutputForm(self,index):
+        self.stackedWidgetOutput.setCurrentIndex(index)
+        
+    def getOutputType(self):
+        return self.outputItemsSelect[self.selectOutputType.currentIndex()]
             
     def populateOriginFieldsLists(self):
         if hasattr(self.getComboboxData('originLayerSelect'),'dataProvider'):
@@ -167,8 +178,7 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             
     def getGeoprocessingType(self):
         rbuttonChecked = None
-        radioGeoprocessingSelectionButtons = ['Intersect','Touch','Contain']
-        for key in radioGeoprocessingSelectionButtons:
+        for key in self.radioGeoprocessingSelectionButtons:
             rbutton = 'geoprocessing' + key + 'Radio'
             if getattr(self, rbutton).isChecked():
                 return getattr(self, rbutton)
@@ -223,6 +233,41 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         result = fieldCalculatorDialog.exec_()
         if result == QtGui.QDialog.Accepted:
             print fieldCalculatorDialog.mOutputFieldTypeComboBox.currentIndex()
+            
+    def openOutputShapeFileDialog(self):
+        self.outputShapeFile.clear()
+        ( outputShapeFile, encoding ) = self._openSaveDialog(self,'save')
+        if outputShapeFile is None or encoding is None:
+          return
+        self.outputShapeFile.setText( outputShapeFile )
+    
+    def openOutputSpatialiteDialog(self):
+        self.outputSpatialite.clear()
+        ( outputSpatialite, encoding ) = self._openSaveDialog(self,'save',filtering="Saptilite files (*.sqlite *.spatialite)")
+        if outputSpatialite is None or encoding is None:
+          return
+        self.outputSpatialite.setText( outputSpatialite )
+        
+    def _openSaveDialog( self,parent,mode="open",saveDefaultSuffix="shp" ,filtering="Shape files (*.shp *.SHP)", dialogMode="SingleFile",dirNamePath="/ARPAPGeoprocessing/lastShapeDir",encode="/ARPAPGeoprocessing/encoding",titleDialog="/ARPAPGeoprocessing/encoding"):
+        settings = QSettings()
+        dirName = settings.value(dirNamePath)
+        encode = settings.value(encode)
+        fileDialog = QgsEncodingFileDialog( parent, titleDialog, dirName, filtering, encode )
+        if mode == 'save':
+            fileDialog.setDefaultSuffix( saveDefaultSuffix )
+            fileDialog.setFileMode( QFileDialog.AnyFile )
+        else:
+            fileDialog.setFileMode( QFileDialog.ExistingFiles )
+            fileDialog.setAcceptMode( QFileDialog.AcceptOpen )
+                
+        if not fileDialog.exec_() == QDialog.Accepted:
+                return None, None
+        files = fileDialog.selectedFiles()
+        settings.setValue(dirNamePath, QFileInfo( unicode( files[0] ) ).absolutePath() )
+        if dialogMode == "SingleFile" or mode == 'save':
+          return ( unicode( files[0] ), unicode( fileDialog.encoding() ) )
+        else:
+          return ( files, unicode( fileDialog.encoding() ) )
         
 
         
