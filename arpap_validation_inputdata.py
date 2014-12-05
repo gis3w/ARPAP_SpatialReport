@@ -68,8 +68,20 @@ class ValidationInputdata():
         
         return toRes
     
-    def validateStep1(self):
-        return self.geoprocessingDataType()
+    #def validateStep1(self):
+        #return self.geoprocessingDataType()
+    
+    def validateStep3(self):
+        toRes = True
+        if self.dlg.getOutputType() == 'Shape File':
+            if not self.dlg.outputShapeFile.text():
+                toRes = False
+                self.errorMessages.append(self.tr('Output Shape File path not to be empty'))
+        elif self.dlg.getOutputType() == 'Spatialite':
+            if not self.dlg.outputSpatialite.text():
+                toRes = False
+                self.errorMessages.append(self.tr('Output Spatialite file path not to be empty'))
+        return toRes
         
         
     def geoprocessingDataType(self):

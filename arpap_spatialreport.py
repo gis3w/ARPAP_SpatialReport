@@ -33,6 +33,7 @@ from processing.tools.dataobjects import *
 from processing.algs.qgis.QGISAlgorithmProvider import QGISAlgorithmProvider
 from processing.gui.SilentProgress import SilentProgress
 from processing.gui.Postprocessing import handleAlgorithmResults
+from processing.core.ProcessingConfig import ProcessingConfig
 from arpap_geoprocessing import Intersection, Touch, Contain
 
 
@@ -256,15 +257,15 @@ class ARPAP_SpatialReport:
         algorithm.setParameterValue('TARGET',self.dlg.getComboboxData('targetLayerSelect'))
         algorithm.setParameterValue('FIELDSORIGIN',self.dlg.getSelectedFields('tableViewOriginLayerFields'))
         algorithm.setParameterValue('FIELDSTARGET',self.dlg.getSelectedFields('tableViewTargetLayerFields'))
-        print self.dlg.getOutputType()
+        ProcessingConfig.setSettingValue(ProcessingConfig.USE_FILENAME_AS_LAYER_NAME,True)
         if self.dlg.getOutputType() == 'Shape File':
             outputFile = self.dlg.outputShapeFile.text()
         elif self.dlg.getOutputType() == 'Spatialite':
             outputFile = self.dlg.outputSpatialite.text()
         algorithm.setOutputValue('OUTPUT',outputFile)
         algorithm.execute(self.dlg)
-        print algorithm.getOutputValue('OUTPUT')
         handleAlgorithmResults(algorithm,self.dlg)
+        ProcessingConfig.setSettingValue(ProcessingConfig.USE_FILENAME_AS_LAYER_NAME,False)
         
         
         

@@ -37,6 +37,7 @@ from qgis.gui import *
 import resources_rc
 
 from arpap_spatialreport_fieldcalculator_dialog import ARPAP_SpatialReportFieldCalculatorDialog
+from arpap_spatialreport_dialog_chart import ARPAP_SpatialReportDialogChart
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -53,8 +54,14 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     def __init__(self, parent=None):
         super(ARPAP_SpatialReportDialog, self).__init__(parent)
         self.setupUi(self)
+        self.manageGui()
+        
+    def manageGui(self):
         self.fieldCalculatorOriginButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/mActionCalculateField.png'))
         self.fieldCalculatorTargetButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/mActionCalculateField.png'))
+        self.forwardButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/forward.png'))
+        self.backButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/back.png'))
+        self.runButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/run.png'))
         self.validation = ValidationInputdata(self,self.tr)
         QObject.connect(self.geoprocessingIntersectRadio, SIGNAL('released()'),self.doValidationGeoprocessingDataType)
         QObject.connect(self.geoprocessingTouchRadio, SIGNAL('released()'),self.doValidationGeoprocessingDataType)
@@ -69,6 +76,9 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         QObject.connect(self.outputSpatialiteButton, SIGNAL('clicked()'),self.openOutputSpatialiteDialog)
         self.populateCombosOutputType()
         QObject.connect(self.selectOutputType, SIGNAL('currentIndexChanged(int)'),self.showOutputForm)
+        
+        QObject.connect(self.openChartDialogButton, SIGNAL('clicked()'),self.openChartDialog)
+        
     
     def changeIndex(self,incrementValue):
         if (self.getValidationStep(self.stackedWidget.currentIndex()) and incrementValue >= 0) or incrementValue < 0:
@@ -201,25 +211,52 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         
     def getCurrentInputValues(self):
         toRet = {}
-        #get stpe1 values
+        #get stpe0 values
         toRet['step0']={
                         'originLayerSelect':self.getComboboxData('originLayerSelect'),
                         'targetLayerSelect':self.getComboboxData('targetLayerSelect'),
                         }
-        #get stpe2 values
+        #get stpe1 values
         toRet['step1']={
                         'geoprocessingTypeData':self.getGeoprocessingTypeData()
+                        }
+        #get stpe2 values
+        toRet['step2']={
+                        'originLayerFields':self.getSelectedFields('tableViewOriginLayerFields'),
+                        'targetLayerFields':self.getSelectedFields('tableViewTargetLayerFields'),
+                        }
+         #get stpe3 values
+        toRet['step3']={
+                        'selectOutputType':self.getOutputType(),
+                        'outputShapeFile':self.outputShapeFile.text(),
+                        'outputSpatialite':self.outputSpatialite.text(),
                         }
         return toRet
         
     def createRuntimeStepLog(self):
         #take current inputs values
         currentInputValues = self.getCurrentInputValues()
-        print currentInputValues
         self.runtimeStepBrowser.clear()
-        self.addRuntimeStepLog("<h3>STEP1:</h3>")
+        self.addRuntimeStepLog("<h3 style='border-style:dotted; border-color:red;'>STEP0:</h3>")
         self.addRuntimeStepLog("<span>ORIGIN LAYER: %s (<b>%s</b>)[] </span>" % (currentInputValues['step0']['originLayerSelect'].name(),getVectorTypeAsString(currentInputValues['step0']['originLayerSelect'])))
         self.addRuntimeStepLog("<span>TARGET LAYER: %s (<b>%s</b>)[] </span>" % (currentInputValues['step0']['targetLayerSelect'].name(),getVectorTypeAsString(currentInputValues['step0']['targetLayerSelect'])))
+        self.addRuntimeStepLog("<h3>STEP1:</h3>")
+        self.addRuntimeStepLog("<span>GEOPORCESSING TYPE: <b>%s</b> </span>" % (currentInputValues['step1']['geoprocessingTypeData']))
+        self.addRuntimeStepLog("<h3>STEP2:</h3>")
+        self.addRuntimeStepLog("<h4>Origin Layer Fields:</h4>")
+        for f in currentInputValues['step2']['originLayerFields']:
+            self.addRuntimeStepLog("%s" % f.name())
+        self.addRuntimeStepLog("<h4>Target Layer Fields:</h4>")
+        for f in currentInputValues['step2']['targetLayerFields']:
+            self.addRuntimeStepLog("%s" % f.name())
+        self.addRuntimeStepLog("<h3>STEP3:</h3>")
+        self.addRuntimeStepLog("<span>OUTPUT TYPE: <b>%s</b> </span>" % (currentInputValues['step3']['selectOutputType']))
+        if self.getOutputType() == 'Shape File':
+            self.addRuntimeStepLog("<span>Shape File Path: <b>%s</b> </span>" % (currentInputValues['step3']['outputShapeFile']))
+        elif self.getOutputType() == 'Spatialite':
+            self.addRuntimeStepLog("<span>SQlit/Spatialite Path: <b>%s</b> </span>" % (currentInputValues['step3']['outputSpatialite']))
+        
+        
     
     def openFieldCalculatorOrigin(self):
         self.openFieldCalculator('origin')
@@ -269,5 +306,7 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         else:
           return ( files, unicode( fileDialog.encoding() ) )
         
-
+    def openChartDialog(self):
+        chartDialog = ARPAP_SpatialReportDialogChart(self)
+        chartDialog.exec_()
         
