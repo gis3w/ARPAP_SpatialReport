@@ -5,5 +5,13 @@
         <file>icons/forward.png</file>
         <file>icons/back.png</file>
         <file>icons/run.png</file>
+        <file>icons/arpa_low_logo.tif</file>
+        <file>icons/alcotra_logo.png</file>
+        <file>icons/risba_logo.jpg</file>
+        <file>icons/unione_europea_logo.jpg</file>
+        <file>icons/project_logo.png</file>
+        <file>icons/mActionFileSave.png</file>
+        <file>icons/mActionOpenTable.png</file>
+        <file>icons/histogram.png</file>
     </qresource>
 </RCC>

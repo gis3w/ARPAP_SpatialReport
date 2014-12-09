@@ -6,19 +6,25 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>599</width>
-    <height>297</height>
+    <width>990</width>
+    <height>456</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout">
+  <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,1">
    <item>
-    <widget class="QGraphicsView" name="graphicsView">
-     <property name="interactive">
-      <bool>true</bool>
+    <widget class="QSplitter" name="splitter">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
      </property>
+     <widget class="QTableView" name="statisticsTableView"/>
+     <widget class="QGraphicsView" name="graphicsView">
+      <property name="interactive">
+       <bool>true</bool>
+      </property>
+     </widget>
     </widget>
    </item>
    <item>
@@ -30,16 +36,56 @@
       <number>10</number>
      </property>
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QLabel" name="label">
        <property name="text">
-        <string>chart</string>
+        <string>Categolry Field:</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="png">
+      <widget class="QListView" name="categoryFieldListView"/>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>png</string>
+        <string>Value Field:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QListView" name="valueFieldListView"/>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Chart Type:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="selectChartType"/>
+     </item>
+     <item>
+      <widget class="QPushButton" name="chartGeneratorButton">
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="text">
+        <string>Re/Generate Chart</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="statisticsGeneratorButton">
+       <property name="text">
+        <string>Generate Statistics</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="savePngFile">
+       <property name="text">
+        <string>Save as Png</string>
        </property>
       </widget>
      </item>

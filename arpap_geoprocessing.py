@@ -24,14 +24,16 @@ __copyright__ = '(C) 2014, Walter Lorenzetti Gis3w'
  
 __revision__ = '$Format:%H$'
 
-
+import os
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
 from processing.algs.qgis.Intersection import Intersection as ProcessingIntersection, wkbTypeGroups
+from processing.gui.RenderingStyles import RenderingStyles
 from processing.core.parameters import ParameterVector, Parameter
 from processing.core.outputs import OutputVector
 from processing.core.ProcessingLog import ProcessingLog
+from processing.core.ProcessingConfig import ProcessingConfig
 from processing.tools import dataobjects, vector
 
     
@@ -252,3 +254,35 @@ class Contain(Touch):
         self.addParameter(ParameterList(self.FIELDSINPUT1,'Fields Input Layer'))
         self.addParameter(ParameterList(self.FIELDSINPUT2,'Fields Touch Layer'))
         self.addOutput(OutputVector(self.OUTPUT, 'Contain'))
+
+
+
+def handleAlgorithmResults(alg, progress=None, showResults=True):
+    wrongLayers = []
+    reslayers = []
+    if progress is None:
+        progress = SilentProgress()
+    progress.setText(QCoreApplication.translate('Postprocessing', 'Loading resulting layers'))
+    i = 0
+    for out in alg.outputs:
+        progress.setPercentage(100 * i / float(len(alg.outputs)))
+        if out.hidden or not out.open:
+            continue
+        if isinstance(out, (OutputVector)):
+            try:
+                if ProcessingConfig.getSetting(
+                        ProcessingConfig.USE_FILENAME_AS_LAYER_NAME):
+                    name = os.path.basename(out.value)
+                else:
+                    name = out.description
+                layer = dataobjects.load(out.value, name, alg.crs,
+                        RenderingStyles.getStyle(alg.commandLineName(),
+                        out.name))
+                    
+                reslayers.append(layer)
+            except Exception, e:
+                wrongLayers.append(out)
+                print e
+            i += 1
+    return reslayers
+     

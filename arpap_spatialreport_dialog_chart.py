@@ -28,7 +28,7 @@ import os
 import sys
 from PyQt4 import QtGui, uic
 from PyQt4.QtWebKit import QGraphicsWebView
-from PyQt4.QtCore import QObject,SIGNAL, Qt, QVariant, QUrl
+from PyQt4.QtCore import QObject,SIGNAL, Qt, QVariant, QUrl, QSize
 from qgis.core import *
 from qgis.gui import *
 import pygal
@@ -42,14 +42,52 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
 
     webview = None
+    chartTypes = dict()
+    algorithm = None
+    reslayer = list()
     
     def __init__(self, parent=None):
         super(ARPAP_SpatialReportDialogChart, self).__init__(parent)
+        self.parent = parent
+        self.algorithm = parent.algorithm
+        self.reslayer = parent.reslayer
         self.setupUi(self)
-        QObject.connect(self.pushButton, SIGNAL('clicked()'),self.test)
-        QObject.connect(self.png, SIGNAL('clicked()'),self.savepng)
+        self.manageGui()
         
-    def test(self):
+        
+    def manageGui(self):
+        self.chartGeneratorButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/histogram.png'))
+        self.statisticsGeneratorButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/mActionOpenTable.png'))
+        self.savePngFile.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/mActionFileSave.png'))
+        QObject.connect(self.chartGeneratorButton, SIGNAL('clicked()'),self.generateChart)
+        QObject.connect(self.savePngFile, SIGNAL('clicked()'),self.savepng)
+        self.populateChartTypesCombo()
+        self.populateCombosField()
+        
+    def populateChartTypesCombo(self):
+        self.chartTypes = {
+                           'Bar':self.tr('Bar (occurrences)'),
+                           'Pie':self.tr('Pie (distribution)'),
+                           }
+        for type in self.chartTypes.keys():
+            self.selectChartType.addItem(self.chartTypes[type],type)
+
+    def populateCombosField(self):
+        layer = self.reslayer[0]
+        #populate category listview
+        modelCategory = QtGui.QStandardItemModel(self.categoryFieldListView)
+        modelValue = QtGui.QStandardItemModel(self.valueFieldListView) 
+        self.categoryFieldListView.setModel(modelCategory)
+        self.valueFieldListView.setModel(modelValue)
+        for field in layer.pendingFields():
+            itemCategory = QtGui.QStandardItem(field.name())
+            itemValue = QtGui.QStandardItem(field.name())
+            modelCategory.appendRow(itemCategory)
+            modelValue.appendRow(itemValue)
+        
+
+
+    def generateChart(self):
         scene = QtGui.QGraphicsScene()
         self.graphicsView.setScene(scene)
         
@@ -72,7 +110,6 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
         self.webview = QGraphicsWebView()
         self.webview.resize(self.graphicsView.width()-20,self.graphicsView.height()-20)
         path = os.path.dirname(__file__)+'/js/'
-        print QUrl().fromLocalFile(path)
         html = '''
         <script type="text/javascript" src="svg.jquery.js"></script>
         <script type="text/javascript" src="pygal-tooltips.js"></script>
@@ -92,7 +129,8 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
         
     def savepng(self):
         p = QtGui.QPixmap.grabWidget(self.graphicsView)
-        p.save('chart.png')
+        out = p.scaled(QSize(1000,1000))
+        res = out.save('/home/walter/chart.png')
         
         
 

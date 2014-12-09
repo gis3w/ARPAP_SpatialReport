@@ -50,6 +50,8 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     radioGeoprocessingSelectionButtons = ['Intersect','Touch','Contain']
     outputItemsSelect = ['Shape File','Spatialite','Postgis']
     headersFieldsTable = ['Field name','Data type','Length','Precision','Actions']
+    algorithm = None
+    reslayer = list()
     
     def __init__(self, parent=None):
         super(ARPAP_SpatialReportDialog, self).__init__(parent)
@@ -62,6 +64,11 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         self.forwardButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/forward.png'))
         self.backButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/back.png'))
         self.runButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/run.png'))
+        self.risbaLogo.setPixmap(QtGui.QPixmap(':/plugins/ARPAP_SpatialReport/icons/risba_logo.jpg'))
+        self.arpaLogo.setPixmap(QtGui.QPixmap(':/plugins/ARPAP_SpatialReport/icons/arpa_low_logo.tif'))
+        self.alcotraLogo.setPixmap(QtGui.QPixmap(':/plugins/ARPAP_SpatialReport/icons/alcotra_logo.png'))
+        self.unioneEuropeaLogo.setPixmap(QtGui.QPixmap(':/plugins/ARPAP_SpatialReport/icons/unione_europea_logo.jpg'))
+        self.projectLogo.setPixmap(QtGui.QPixmap(':/plugins/ARPAP_SpatialReport/icons/project_logo.png'))
         self.validation = ValidationInputdata(self,self.tr)
         QObject.connect(self.geoprocessingIntersectRadio, SIGNAL('released()'),self.doValidationGeoprocessingDataType)
         QObject.connect(self.geoprocessingTouchRadio, SIGNAL('released()'),self.doValidationGeoprocessingDataType)
@@ -76,8 +83,8 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         QObject.connect(self.outputSpatialiteButton, SIGNAL('clicked()'),self.openOutputSpatialiteDialog)
         self.populateCombosOutputType()
         QObject.connect(self.selectOutputType, SIGNAL('currentIndexChanged(int)'),self.showOutputForm)
-        
         QObject.connect(self.openChartDialogButton, SIGNAL('clicked()'),self.openChartDialog)
+        self.populateCredits()
         
     
     def changeIndex(self,incrementValue):
@@ -96,6 +103,9 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         
     def oneBackStep(self):
         self.changeIndex(-1)
+        
+    def populateCredits(self):
+        pass
             
     def populateCombosOriginTarget(self):
         layers = getVectorLayers()
@@ -213,20 +223,24 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         toRet = {}
         #get stpe0 values
         toRet['step0']={
+                        'title':self.tr('Selection Origin -> Target'),
                         'originLayerSelect':self.getComboboxData('originLayerSelect'),
                         'targetLayerSelect':self.getComboboxData('targetLayerSelect'),
                         }
         #get stpe1 values
         toRet['step1']={
+                        'title':self.tr('Selection Geometry operation'),
                         'geoprocessingTypeData':self.getGeoprocessingTypeData()
                         }
         #get stpe2 values
         toRet['step2']={
+                        'title':self.tr('Selection fields'),
                         'originLayerFields':self.getSelectedFields('tableViewOriginLayerFields'),
                         'targetLayerFields':self.getSelectedFields('tableViewTargetLayerFields'),
                         }
          #get stpe3 values
         toRet['step3']={
+                        'title':self.tr('Selection Output'),
                         'selectOutputType':self.getOutputType(),
                         'outputShapeFile':self.outputShapeFile.text(),
                         'outputSpatialite':self.outputSpatialite.text(),
@@ -237,19 +251,19 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         #take current inputs values
         currentInputValues = self.getCurrentInputValues()
         self.runtimeStepBrowser.clear()
-        self.addRuntimeStepLog("<h3 style='border-style:dotted; border-color:red;'>STEP0:</h3>")
+        self.addRuntimeStepLog("<h3 style='border-style:dotted; border-color:red;'><u>1) %s:</u></h3>" % currentInputValues['step0']['title'])
         self.addRuntimeStepLog("<span>ORIGIN LAYER: %s (<b>%s</b>)[] </span>" % (currentInputValues['step0']['originLayerSelect'].name(),getVectorTypeAsString(currentInputValues['step0']['originLayerSelect'])))
         self.addRuntimeStepLog("<span>TARGET LAYER: %s (<b>%s</b>)[] </span>" % (currentInputValues['step0']['targetLayerSelect'].name(),getVectorTypeAsString(currentInputValues['step0']['targetLayerSelect'])))
-        self.addRuntimeStepLog("<h3>STEP1:</h3>")
+        self.addRuntimeStepLog("<h3><u>2) %s:</u></h3>" % currentInputValues['step1']['title'])
         self.addRuntimeStepLog("<span>GEOPORCESSING TYPE: <b>%s</b> </span>" % (currentInputValues['step1']['geoprocessingTypeData']))
-        self.addRuntimeStepLog("<h3>STEP2:</h3>")
+        self.addRuntimeStepLog("<h3><u>3) %s:</u></h3>" % currentInputValues['step2']['title'])
         self.addRuntimeStepLog("<h4>Origin Layer Fields:</h4>")
         for f in currentInputValues['step2']['originLayerFields']:
             self.addRuntimeStepLog("%s" % f.name())
         self.addRuntimeStepLog("<h4>Target Layer Fields:</h4>")
         for f in currentInputValues['step2']['targetLayerFields']:
             self.addRuntimeStepLog("%s" % f.name())
-        self.addRuntimeStepLog("<h3>STEP3:</h3>")
+        self.addRuntimeStepLog("<h3><u>4) %s:</u></h3>" % currentInputValues['step3']['title'])
         self.addRuntimeStepLog("<span>OUTPUT TYPE: <b>%s</b> </span>" % (currentInputValues['step3']['selectOutputType']))
         if self.getOutputType() == 'Shape File':
             self.addRuntimeStepLog("<span>Shape File Path: <b>%s</b> </span>" % (currentInputValues['step3']['outputShapeFile']))

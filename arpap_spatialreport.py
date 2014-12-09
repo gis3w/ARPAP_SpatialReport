@@ -32,9 +32,9 @@ import os.path
 from processing.tools.dataobjects import *
 from processing.algs.qgis.QGISAlgorithmProvider import QGISAlgorithmProvider
 from processing.gui.SilentProgress import SilentProgress
-from processing.gui.Postprocessing import handleAlgorithmResults
+#from processing.gui.Postprocessing import handleAlgorithmResults
 from processing.core.ProcessingConfig import ProcessingConfig
-from arpap_geoprocessing import Intersection, Touch, Contain
+from arpap_geoprocessing import Intersection, Touch, Contain, handleAlgorithmResults
 
 
 class ARPAP_SpatialReport:
@@ -68,7 +68,7 @@ class ARPAP_SpatialReport:
         # Create the dialog (after translation) and keep reference
         self.dlg = ARPAP_SpatialReportDialog()
         
-        QObject.connect(self.dlg.testButton, SIGNAL('pressed()'),self.test)
+        #QObject.connect(self.dlg.testButton, SIGNAL('pressed()'),self.test)
         QObject.connect(self.dlg.browseConfigFileOutputButton, SIGNAL('clicked()'),self.outConfigFile)
         QObject.connect(self.dlg.browseConfigFileInputButton, SIGNAL('clicked()'),self.inConfigFile)
         QObject.connect(self.dlg.runButton, SIGNAL('clicked()'),self.runAlgorithm)
@@ -252,6 +252,7 @@ class ARPAP_SpatialReport:
     
     def runAlgorithm(self):
         algorithm = self.GeoprocessingAlgorithms[self.dlg.getGeoprocessingTypeData()]()
+        self.dlg.algorithm = algorithm
         algorithm.provider = QGISAlgorithmProvider()
         algorithm.setParameterValue('ORIGIN',self.dlg.getComboboxData('originLayerSelect'))
         algorithm.setParameterValue('TARGET',self.dlg.getComboboxData('targetLayerSelect'))
@@ -264,7 +265,7 @@ class ARPAP_SpatialReport:
             outputFile = self.dlg.outputSpatialite.text()
         algorithm.setOutputValue('OUTPUT',outputFile)
         algorithm.execute(self.dlg)
-        handleAlgorithmResults(algorithm,self.dlg)
+        self.dlg.reslayer = handleAlgorithmResults(algorithm,self.dlg)
         ProcessingConfig.setSettingValue(ProcessingConfig.USE_FILENAME_AS_LAYER_NAME,False)
         
         
