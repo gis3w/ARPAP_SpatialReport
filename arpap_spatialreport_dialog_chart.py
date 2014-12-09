@@ -34,12 +34,9 @@ from qgis.gui import *
 import pygal
 
 
+from ui_qgsfieldcalculatorbase import Ui_QgsFieldCalculatorBase
 
-FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'arpap_spatialreport_dialog_chart.ui'))
-
-
-class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
+class ARPAP_SpatialReportDialogChart(QtGui.QDialog, Ui_QgsFieldCalculatorBase):
 
     webview = None
     chartTypes = dict()

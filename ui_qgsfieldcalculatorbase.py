@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'qgsfieldcalculatorbase.ui'
 #
-# Created: Tue Dec  2 11:44:56 2014
+# Created: Tue Dec  9 18:51:20 2014
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -29,29 +29,6 @@ class Ui_QgsFieldCalculatorBase(object):
         QgsFieldCalculatorBase.resize(681, 624)
         self.gridLayout = QtGui.QGridLayout(QgsFieldCalculatorBase)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
-        self.mOnlyUpdateSelectedCheckBox = QtGui.QCheckBox(QgsFieldCalculatorBase)
-        self.mOnlyUpdateSelectedCheckBox.setObjectName(_fromUtf8("mOnlyUpdateSelectedCheckBox"))
-        self.gridLayout.addWidget(self.mOnlyUpdateSelectedCheckBox, 0, 0, 1, 1)
-        self.widget = QtGui.QWidget(QgsFieldCalculatorBase)
-        self.widget.setObjectName(_fromUtf8("widget"))
-        self.gridLayout_2 = QtGui.QGridLayout(self.widget)
-        self.gridLayout_2.setMargin(0)
-        self.gridLayout_2.setObjectName(_fromUtf8("gridLayout_2"))
-        self.mInfoIcon = QtGui.QLabel(self.widget)
-        self.mInfoIcon.setMinimumSize(QtCore.QSize(64, 64))
-        self.mInfoIcon.setMaximumSize(QtCore.QSize(64, 64))
-        self.mInfoIcon.setText(_fromUtf8(""))
-        self.mInfoIcon.setObjectName(_fromUtf8("mInfoIcon"))
-        self.gridLayout_2.addWidget(self.mInfoIcon, 0, 0, 1, 1)
-        self.mEditModeAutoTurnOnLabel = QtGui.QLabel(self.widget)
-        self.mEditModeAutoTurnOnLabel.setWordWrap(True)
-        self.mEditModeAutoTurnOnLabel.setObjectName(_fromUtf8("mEditModeAutoTurnOnLabel"))
-        self.gridLayout_2.addWidget(self.mEditModeAutoTurnOnLabel, 0, 1, 1, 1)
-        self.mOnlyVirtualFieldsInfoLabel = QtGui.QLabel(self.widget)
-        self.mOnlyVirtualFieldsInfoLabel.setWordWrap(True)
-        self.mOnlyVirtualFieldsInfoLabel.setObjectName(_fromUtf8("mOnlyVirtualFieldsInfoLabel"))
-        self.gridLayout_2.addWidget(self.mOnlyVirtualFieldsInfoLabel, 1, 1, 1, 1)
-        self.gridLayout.addWidget(self.widget, 3, 0, 1, 2)
         self.mUpdateExistingGroupBox = QtGui.QGroupBox(QgsFieldCalculatorBase)
         self.mUpdateExistingGroupBox.setFlat(True)
         self.mUpdateExistingGroupBox.setCheckable(True)
@@ -63,11 +40,27 @@ class Ui_QgsFieldCalculatorBase(object):
         self.mExistingFieldComboBox = QtGui.QComboBox(self.mUpdateExistingGroupBox)
         self.mExistingFieldComboBox.setObjectName(_fromUtf8("mExistingFieldComboBox"))
         self.verticalLayout.addWidget(self.mExistingFieldComboBox)
-        self.gridLayout.addWidget(self.mUpdateExistingGroupBox, 1, 1, 1, 1)
+        self.gridLayout.addWidget(self.mUpdateExistingGroupBox, 0, 1, 1, 1)
+        self.widget = QtGui.QWidget(QgsFieldCalculatorBase)
+        self.widget.setObjectName(_fromUtf8("widget"))
+        self.gridLayout_2 = QtGui.QGridLayout(self.widget)
+        self.gridLayout_2.setMargin(0)
+        self.gridLayout_2.setObjectName(_fromUtf8("gridLayout_2"))
+        self.mInfoIcon = QtGui.QLabel(self.widget)
+        self.mInfoIcon.setMinimumSize(QtCore.QSize(64, 64))
+        self.mInfoIcon.setMaximumSize(QtCore.QSize(64, 64))
+        self.mInfoIcon.setText(_fromUtf8(""))
+        self.mInfoIcon.setObjectName(_fromUtf8("mInfoIcon"))
+        self.gridLayout_2.addWidget(self.mInfoIcon, 0, 0, 1, 1)
+        self.mOnlyVirtualFieldsInfoLabel = QtGui.QLabel(self.widget)
+        self.mOnlyVirtualFieldsInfoLabel.setWordWrap(True)
+        self.mOnlyVirtualFieldsInfoLabel.setObjectName(_fromUtf8("mOnlyVirtualFieldsInfoLabel"))
+        self.gridLayout_2.addWidget(self.mOnlyVirtualFieldsInfoLabel, 1, 1, 1, 1)
+        self.gridLayout.addWidget(self.widget, 2, 0, 1, 2)
         self.builder = gui.QgsExpressionBuilderWidget(QgsFieldCalculatorBase)
         self.builder.setAutoFillBackground(False)
         self.builder.setObjectName(_fromUtf8("builder"))
-        self.gridLayout.addWidget(self.builder, 2, 0, 1, 2)
+        self.gridLayout.addWidget(self.builder, 1, 0, 1, 2)
         self.mButtonBox = QtGui.QDialogButtonBox(QgsFieldCalculatorBase)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(3)
@@ -77,7 +70,7 @@ class Ui_QgsFieldCalculatorBase(object):
         self.mButtonBox.setOrientation(QtCore.Qt.Horizontal)
         self.mButtonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Help|QtGui.QDialogButtonBox.Ok)
         self.mButtonBox.setObjectName(_fromUtf8("mButtonBox"))
-        self.gridLayout.addWidget(self.mButtonBox, 7, 0, 1, 2)
+        self.gridLayout.addWidget(self.mButtonBox, 6, 0, 1, 2)
         self.mNewFieldGroupBox = QtGui.QGroupBox(QgsFieldCalculatorBase)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -123,7 +116,7 @@ class Ui_QgsFieldCalculatorBase(object):
         self.mCreateVirtualFieldCheckbox = QtGui.QCheckBox(self.mNewFieldGroupBox)
         self.mCreateVirtualFieldCheckbox.setObjectName(_fromUtf8("mCreateVirtualFieldCheckbox"))
         self.gridlayout.addWidget(self.mCreateVirtualFieldCheckbox, 2, 0, 1, 4)
-        self.gridLayout.addWidget(self.mNewFieldGroupBox, 1, 0, 1, 1)
+        self.gridLayout.addWidget(self.mNewFieldGroupBox, 0, 0, 1, 1)
         self.mFieldNameLabel.setBuddy(self.mOutputFieldNameLineEdit)
         self.mOutputFieldWidthLabel.setBuddy(self.mOutputFieldWidthSpinBox)
         self.mOutputFieldTypeLabel.setBuddy(self.mOutputFieldTypeComboBox)
@@ -140,10 +133,8 @@ class Ui_QgsFieldCalculatorBase(object):
 
     def retranslateUi(self, QgsFieldCalculatorBase):
         QgsFieldCalculatorBase.setWindowTitle(_translate("QgsFieldCalculatorBase", "Field calculator", None))
-        self.mOnlyUpdateSelectedCheckBox.setText(_translate("QgsFieldCalculatorBase", "Only update selected features", None))
-        self.mEditModeAutoTurnOnLabel.setText(_translate("QgsFieldCalculatorBase", "You are editing information on this layer but the layer is currently not in edit mode. If you click Ok, edit mode will automatically be turned on.", None))
-        self.mOnlyVirtualFieldsInfoLabel.setText(_translate("QgsFieldCalculatorBase", "This layer does not support adding new provider fields. You can only add virtual fields.", None))
         self.mUpdateExistingGroupBox.setTitle(_translate("QgsFieldCalculatorBase", "Update existing field", None))
+        self.mOnlyVirtualFieldsInfoLabel.setText(_translate("QgsFieldCalculatorBase", "This layer does not support adding new provider fields. You can only add virtual fields.", None))
         self.mNewFieldGroupBox.setTitle(_translate("QgsFieldCalculatorBase", "Create a new field", None))
         self.mFieldNameLabel.setText(_translate("QgsFieldCalculatorBase", "Output field name", None))
         self.mOutputFieldWidthLabel.setText(_translate("QgsFieldCalculatorBase", "Output field width", None))
@@ -154,4 +145,3 @@ class Ui_QgsFieldCalculatorBase(object):
         self.mCreateVirtualFieldCheckbox.setText(_translate("QgsFieldCalculatorBase", "Create virtual field", None))
 
 from qgis import gui
-
