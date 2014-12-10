@@ -267,6 +267,7 @@ class ARPAP_SpatialReport:
         algorithm.execute(self.dlg)
         self.dlg.reslayer = handleAlgorithmResults(algorithm,self.dlg)
         ProcessingConfig.setSettingValue(ProcessingConfig.USE_FILENAME_AS_LAYER_NAME,False)
+        self.dlg.openChartDialogButton.setEnabled(True)
         
         
         

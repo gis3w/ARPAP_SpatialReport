@@ -32,12 +32,9 @@ from qgis.core import *
 from qgis.gui import *
 
 
+from ui_qgsfieldcalculatorbase import Ui_QgsFieldCalculatorBase
 
-FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'qgsfieldcalculatorbase.ui'))
-
-
-class ARPAP_SpatialReportFieldCalculatorDialog(QtGui.QDialog, FORM_CLASS):
+class ARPAP_SpatialReportFieldCalculatorDialog(QtGui.QDialog, Ui_QgsFieldCalculatorBase):
     
     TYPE_NAMES = ['Float', 'Integer', 'String', 'Date']
     TYPES = [QVariant.Double, QVariant.Int, QVariant.String, QVariant.Date]

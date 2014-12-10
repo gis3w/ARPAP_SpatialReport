@@ -94,6 +94,7 @@ class Intersection(ProcessingIntersection):
         nElement = 0
         selectionA = vector.features(vlayerA)
         nFeat = len(selectionA)
+        progress.setText(QCoreApplication.translate('ArpaGeoprocessing', 'Running algorithm...'))
         for inFeatA in selectionA:
             nElement += 1
             progress.setPercentage(nElement / float(nFeat) * 100)
@@ -262,7 +263,7 @@ def handleAlgorithmResults(alg, progress=None, showResults=True):
     reslayers = []
     if progress is None:
         progress = SilentProgress()
-    progress.setText(QCoreApplication.translate('Postprocessing', 'Loading resulting layers'))
+    progress.setText(QCoreApplication.translate('ArpaGeoprocessing', 'Loading resulting layers'))
     i = 0
     for out in alg.outputs:
         progress.setPercentage(100 * i / float(len(alg.outputs)))

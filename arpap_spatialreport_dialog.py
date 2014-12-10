@@ -64,6 +64,7 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         self.forwardButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/forward.png'))
         self.backButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/back.png'))
         self.runButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/run.png'))
+        self.openChartDialogButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/histogram.png'))
         self.risbaLogo.setPixmap(QtGui.QPixmap(':/plugins/ARPAP_SpatialReport/icons/risba_logo.jpg'))
         self.arpaLogo.setPixmap(QtGui.QPixmap(':/plugins/ARPAP_SpatialReport/icons/arpa_low_logo.tif'))
         self.alcotraLogo.setPixmap(QtGui.QPixmap(':/plugins/ARPAP_SpatialReport/icons/alcotra_logo.png'))
@@ -163,6 +164,7 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         return fieldsToRet
             
     def setButtonNavigationStatus(self):
+        self.openChartDialogButton.setEnabled(False)
         if self.stackedWidget.currentIndex() == 0:
             self.backButton.setEnabled(False)
         else:
@@ -252,8 +254,8 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         currentInputValues = self.getCurrentInputValues()
         self.runtimeStepBrowser.clear()
         self.addRuntimeStepLog("<h3 style='border-style:dotted; border-color:red;'><u>1) %s:</u></h3>" % currentInputValues['step0']['title'])
-        self.addRuntimeStepLog("<span>ORIGIN LAYER: %s (<b>%s</b>)[] </span>" % (currentInputValues['step0']['originLayerSelect'].name(),getVectorTypeAsString(currentInputValues['step0']['originLayerSelect'])))
-        self.addRuntimeStepLog("<span>TARGET LAYER: %s (<b>%s</b>)[] </span>" % (currentInputValues['step0']['targetLayerSelect'].name(),getVectorTypeAsString(currentInputValues['step0']['targetLayerSelect'])))
+        self.addRuntimeStepLog("<span>ORIGIN LAYER: %s (<b>%s</b>)[Provider:%s, Epsg:%s] </span>" % (currentInputValues['step0']['originLayerSelect'].name(),getVectorTypeAsString(currentInputValues['step0']['originLayerSelect']),currentInputValues['step0']['originLayerSelect'].dataProvider().storageType(),str(currentInputValues['step0']['originLayerSelect'].crs().postgisSrid())))
+        self.addRuntimeStepLog("<span>TARGET LAYER: %s (<b>%s</b>)[Provider:%s, Epsg:%s] </span>" % (currentInputValues['step0']['targetLayerSelect'].name(),getVectorTypeAsString(currentInputValues['step0']['targetLayerSelect']),currentInputValues['step0']['targetLayerSelect'].dataProvider().storageType(),str(currentInputValues['step0']['targetLayerSelect'].crs().postgisSrid())))
         self.addRuntimeStepLog("<h3><u>2) %s:</u></h3>" % currentInputValues['step1']['title'])
         self.addRuntimeStepLog("<span>GEOPORCESSING TYPE: <b>%s</b> </span>" % (currentInputValues['step1']['geoprocessingTypeData']))
         self.addRuntimeStepLog("<h3><u>3) %s:</u></h3>" % currentInputValues['step2']['title'])
