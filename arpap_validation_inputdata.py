@@ -82,7 +82,22 @@ class ValidationInputdata():
                 toRes = False
                 self.errorMessages.append(self.tr('Output Spatialite file path not to be empty'))
         return toRes
-        
+    
+    def validateChart(self,chartType):
+        toRes = True
+        if chartType == 'bar':
+            if not self.dlg.getSelectedListViewItem('category'):
+                toRes = False
+                self.errorMessages.append(self.tr('For Bar chart type, you have to select a Category combobox item'))
+        else:
+            itemValue = self.dlg.getSelectedListViewItem('value')
+            if not self.dlg.getSelectedListViewItem('category') or not itemValue:
+                toRes = False
+                self.errorMessages.append(self.tr('For Pie chart type, you have to select a Category combobox item and a Value combobox item'))
+            if itemValue.typeName() not in ('int','double','float'):
+                toRes = False
+                self.errorMessages.append(self.tr('For Pie chart type, you have to select a numeric Value combobox item'))
+        return toRes      
         
     def geoprocessingDataType(self):
         geoprocessingType = self.dlg.getGeoprocessingTypeData()

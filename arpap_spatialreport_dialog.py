@@ -21,6 +21,14 @@
  ***************************************************************************/
 """
 
+__author__ = 'Walter Lorenzetti'
+__date__ = 'December 2014'
+__copyright__ = '(C) 2014, Walter Lorenzetti Gis3w'
+
+# This will get replaced with a git SHA1 when you do a git archive
+ 
+__revision__ = '$Format:%H$'
+
 import os
 import sys
 from PyQt4 import QtGui, uic
@@ -59,6 +67,9 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         self.manageGui()
         
     def manageGui(self):
+        """
+        Finalize gui
+        """
         self.fieldCalculatorOriginButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/mActionCalculateField.png'))
         self.fieldCalculatorTargetButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/mActionCalculateField.png'))
         self.forwardButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/forward.png'))
@@ -85,10 +96,12 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         self.populateCombosOutputType()
         QObject.connect(self.selectOutputType, SIGNAL('currentIndexChanged(int)'),self.showOutputForm)
         QObject.connect(self.openChartDialogButton, SIGNAL('clicked()'),self.openChartDialog)
-        self.populateCredits()
         
     
     def changeIndex(self,incrementValue):
+        """
+        Change step manager
+        """
         if (self.getValidationStep(self.stackedWidget.currentIndex()) and incrementValue >= 0) or incrementValue < 0:
             self.stackedWidget.setCurrentIndex(self.stackedWidget.currentIndex() + incrementValue)
             self.setButtonNavigationStatus()
@@ -96,6 +109,8 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
                 self.doValidationGeoprocessingDataType()
             elif self.stackedWidget.currentIndex() == 3:
                 self.showOutputForm(self.selectOutputType.currentIndex())
+            elif self.stackedWidget.currentIndex() == 4:
+                self.manageReportButton()
         else:
             self.showValidateErrors()
     
@@ -105,16 +120,21 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     def oneBackStep(self):
         self.changeIndex(-1)
         
-    def populateCredits(self):
-        pass
+    def manageReportButton(self):
+        if len(self.reslayer):
+            self.labelProgress.setText(self.tr('Current output layer: '+self.reslayer[0].name()))
+            self.openChartDialogButton.setEnabled(True)
+        else:
+            self.labelProgress.setText('')
             
+        
     def populateCombosOriginTarget(self):
         layers = getVectorLayers()
         self.originLayerSelect.clear()
         self.targetLayerSelect.clear()
         for vlayer in layers:
-            self.originLayerSelect.addItem(vlayer.name(),vlayer)
-            self.targetLayerSelect.addItem(vlayer.name(),vlayer)
+            self.originLayerSelect.addItem('%s [Provider:%s, Epsg:%s]' % (vlayer.name(),vlayer.dataProvider().storageType(),vlayer.crs().postgisSrid()) ,vlayer)
+            self.targetLayerSelect.addItem('%s [Provider:%s, Epsg:%s]' % (vlayer.name(),vlayer.dataProvider().storageType(),vlayer.crs().postgisSrid()),vlayer)
             
     def populateCombosOutputType(self):
         for type in self.outputItemsSelect:
@@ -270,7 +290,7 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         if self.getOutputType() == 'Shape File':
             self.addRuntimeStepLog("<span>Shape File Path: <b>%s</b> </span>" % (currentInputValues['step3']['outputShapeFile']))
         elif self.getOutputType() == 'Spatialite':
-            self.addRuntimeStepLog("<span>SQlit/Spatialite Path: <b>%s</b> </span>" % (currentInputValues['step3']['outputSpatialite']))
+            self.addRuntimeStepLog("<span>SQlite/Spatialite Path: <b>%s</b> </span>" % (currentInputValues['step3']['outputSpatialite']))
         
         
     

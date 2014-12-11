@@ -32,6 +32,8 @@ from PyQt4.QtCore import QObject,SIGNAL, Qt, QVariant, QUrl, QSize
 from qgis.core import *
 from qgis.gui import *
 import pygal
+from pygal import style
+from arpap_validation_inputdata import ValidationInputdata
 
 
 
@@ -45,12 +47,16 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
     chartTypes = dict()
     algorithm = None
     reslayer = list()
+    modelCategory = None
+    modelValue = None
+    validation = None
     
     def __init__(self, parent=None):
         super(ARPAP_SpatialReportDialogChart, self).__init__(parent)
         self.parent = parent
         self.algorithm = parent.algorithm
         self.reslayer = parent.reslayer
+        self.validation = ValidationInputdata(self,self.tr)
         self.setupUi(self)
         self.manageGui()
         
@@ -66,24 +72,35 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
         
     def populateChartTypesCombo(self):
         self.chartTypes = {
-                           'Bar':self.tr('Bar (occurrences)'),
-                           'Pie':self.tr('Pie (distribution)'),
+                           'bar':self.tr('Bar (occurrences)'),
+                           'pie':self.tr('Pie (distribution)'),
                            }
         for type in self.chartTypes.keys():
             self.selectChartType.addItem(self.chartTypes[type],type)
+            
+    def getChartType(self):
+        return self.selectChartType.itemData(self.selectChartType.currentIndex())
+    
+    def getSelectedListViewItem(self,listViewName):
+        
+        model_index = getattr(self,listViewName.lower()+'FieldListView').currentIndex()
+        if model_index.row() != -1:
+            return getattr(self,'model'+listViewName.capitalize()).itemFromIndex(model_index)
 
     def populateCombosField(self):
         layer = self.reslayer[0]
         #populate category listview
-        modelCategory = QtGui.QStandardItemModel(self.categoryFieldListView)
-        modelValue = QtGui.QStandardItemModel(self.valueFieldListView) 
-        self.categoryFieldListView.setModel(modelCategory)
-        self.valueFieldListView.setModel(modelValue)
+        self.modelCategory = QtGui.QStandardItemModel(self.categoryFieldListView)
+        self.modelValue = QtGui.QStandardItemModel(self.valueFieldListView) 
+        self.categoryFieldListView.setModel(self.modelCategory)
+        self.valueFieldListView.setModel(self.modelValue)
         for field in layer.pendingFields():
             itemCategory = QtGui.QStandardItem(field.name())
+            itemCategory.setData(field)
             itemValue = QtGui.QStandardItem(field.name())
-            modelCategory.appendRow(itemCategory)
-            modelValue.appendRow(itemValue)
+            itemValue.setData(field)
+            self.modelCategory.appendRow(itemCategory)
+            self.modelValue.appendRow(itemValue)
         
 
 
@@ -91,46 +108,80 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
         scene = QtGui.QGraphicsScene()
         self.graphicsView.setScene(scene)
         
+        #select data adn chart type
+        chartType = self.getChartType()
+        if self.validation.validateChart(chartType):
+            chart = getattr(self, chartType+'ChartGenerator')()
+            
+             
+            self.webview = QGraphicsWebView()
+            self.webview.resize(self.graphicsView.width()-20,self.graphicsView.height()-20)
+            path = os.path.dirname(__file__)+'/js/'
+            html = '''
+            <script type="text/javascript" src="svg.jquery.js"></script>
+            <script type="text/javascript" src="pygal-tooltips.js"></script>
+            '''+chart.render()
+            
+            self.webview.setHtml(html,baseUrl=QUrl().fromLocalFile(path))
+            self.webview.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
+            self.webview.setCacheMode(QtGui.QGraphicsItem.NoCache)
+            frame = self.webview.page().mainFrame()
+            frame.setScrollBarPolicy(Qt.Vertical,Qt.ScrollBarAlwaysOff)
+            frame.setScrollBarPolicy(Qt.Horizontal,Qt.ScrollBarAlwaysOff)        
+            scene.addItem(self.webview)
+            self.graphicsView.show()
+        else:
+            self.showValidateErrors()
         
-        chart = pygal.StackedLine(fill=True, interpolate='cubic', style=pygal.style.BlueStyle)
-        chart.add('A', [1, 3,  5, 16, 13, 3,  7])
-        chart.add('B', [5, 2,  3,  2,  5, 7, 17])
-        chart.add('C', [6, 10, 9,  7,  3, 1,  0])
-        chart.add('D', [2,  3, 5,  9, 12, 9,  5])
-        chart.add('E', [7,  4, 2,  1,  2, 10, 0])
+    def barChartGenerator(self):
+        categoryItem = self.getSelectedListViewItem('category')
+        layer = self.reslayer[0]
+        features = layer.getFeatures()
+        occourences = dict()
+        for f in features:
+            value = f.attribute(categoryItem.text())
+            if value not in occourences:
+                occourences[value] = 0
+            occourences[value] += 1 
+            
         
-        line_chart = pygal.Line(style=pygal.style.BlueStyle)
-        line_chart.title = 'Browser usage evolution (in %)'
-        line_chart.x_labels = map(str, range(2002, 2013))
-        line_chart.add('Firefox', [None, None, 0, 16.6,   25,   31, 36.4, 45.5, 46.3, 42.8, 37.1])
-        line_chart.add('Chrome',  [None, None, None, None, None, None,    0,  3.9, 10.8, 23.8, 35.3])
-        line_chart.add('IE',      [85.8, 84.6, 84.7, 74.5,   66, 58.6, 54.7, 44.8, 36.2, 26.6, 20.1])
-        line_chart.add('Others',  [14.2, 15.4, 15.3,  8.9,    9, 10.4,  8.9,  5.8,  6.7,  6.8,  7.5])
+        chart = pygal.Bar(fill=True, show_legend=False, style=style.BlueStyle)
+        chart.x_labels = map(str, occourences.keys())
+        chart.add(categoryItem.text(), occourences.values())
         
-        self.webview = QGraphicsWebView()
-        self.webview.resize(self.graphicsView.width()-20,self.graphicsView.height()-20)
-        path = os.path.dirname(__file__)+'/js/'
-        html = '''
-        <script type="text/javascript" src="svg.jquery.js"></script>
-        <script type="text/javascript" src="pygal-tooltips.js"></script>
-        '''+line_chart.render()
+        return chart
+    
+    def pieChartGenerator(self):
+        categoryItem = self.getSelectedListViewItem('category')
+        valueItem = self.getSelectedListViewItem('value')
+        layer = self.reslayer[0]
+        features = layer.getFeatures()
+        occourences = dict()
+        totValue = 0
+        for f in features:
+            key = f.attribute(categoryItem.text()) 
+            value = f.attribute(valueItem.text())
+            if key not in occourences:
+                occourences[key] = 0
+            occourences[key] += value
+            totValue += value
+            
         
-        self.webview.setHtml(html,baseUrl=QUrl().fromLocalFile(path))
-        self.webview.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
-        self.webview.setCacheMode(QtGui.QGraphicsItem.NoCache)
-        frame = self.webview.page().mainFrame()
-        frame.setScrollBarPolicy(Qt.Vertical,Qt.ScrollBarAlwaysOff)
-        frame.setScrollBarPolicy(Qt.Horizontal,Qt.ScrollBarAlwaysOff)
+        chart = pygal.Pie(fill=True, show_legend=False, style=style.BlueStyle)
+        print occourences
+        for key in occourences:
+            chart.add(key, float(float(occourences[key])/float(totValue)))
         
-        
-        
-        scene.addItem(self.webview)
-        self.graphicsView.show()
+        return chart
         
     def savepng(self):
         p = QtGui.QPixmap.grabWidget(self.graphicsView)
         out = p.scaled(QSize(1000,1000))
         res = out.save('/home/walter/chart.png')
+        
+    def showValidateErrors(self):
+        QtGui.QMessageBox.warning( self, self.tr("ARPA Spatial Report"), self.tr( "Validation error:\n" ) + ';\n'.join(self.validation.getErrors()) )
+
         
         
 

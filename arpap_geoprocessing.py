@@ -35,7 +35,53 @@ from processing.core.outputs import OutputVector
 from processing.core.ProcessingLog import ProcessingLog
 from processing.core.ProcessingConfig import ProcessingConfig
 from processing.tools import dataobjects, vector
+from processing.tools.vector import _toQgsField
 
+class SpatialiteWriter(vector.VectorWriter):
+
+    def __init__(self, fileName, encoding, fields, geometryType,
+                 crs, options=None):
+        self.fileName = fileName
+        self.isMemory = False
+        self.memLayer = None
+        self.writer = None
+
+        if encoding is None:
+            settings = QSettings()
+            encoding = settings.value('/Processing/encoding', 'System', type=str)
+
+        formats = QgsVectorFileWriter.supportedFiltersAndFormats()
+        OGRCodes = {}
+        for (key, value) in formats.items():
+            extension = unicode(key)
+            extension = extension[extension.find('*.') + 2:]
+            extension = extension[:extension.find(' ')]
+            OGRCodes[extension] = value
+
+        extension = self.fileName[self.fileName.rfind('.') + 1:]
+        if extension not in OGRCodes:
+            extension = 'sqlite'
+            self.filename = self.filename + 'sqlite'
+
+        qgsfields = QgsFields()
+        for field in fields:
+            qgsfields.append(_toQgsField(field))
+
+        self.writer = QgsVectorFileWriter(self.fileName, encoding,
+            qgsfields, geometryType, crs, OGRCodes[extension],["SPATIALITE=YES",])
+
+
+
+class OutputSpatialite(OutputVector):
+    def getVectorWriter(self, fields, geomType, crs, options=None):
+        if self.encoding is None:
+            settings = QSettings()
+            self.encoding = settings.value('/Processing/encoding', 'System', str)
+    
+        w = SpatialiteWriter(self.value, self.encoding, fields, geomType,
+                         crs, options)
+        self.memoryLayer = w.memLayer
+        return w
     
 
 class ParameterList(Parameter):
@@ -74,6 +120,21 @@ class Intersection(ProcessingIntersection):
     FIELDSINPUT1 = 'FIELDSORIGIN'
     FIELDSINPUT2 = 'FIELDSTARGET'
     OUTPUT = 'OUTPUT'
+    
+    outputFormats = {
+               'Shape File':OutputVector,
+               'Spatialite':OutputSpatialite,
+               'Postgis':OutputVector,
+               }
+    
+    outputType = 'Shape File'
+    
+    name = 'Intersection'
+    group = 'Vector overlay tools'
+    
+    def __init__(self,outputType):
+        self.outputType = outputType
+        ProcessingIntersection.__init__(self)
     
     def processAlgorithm(self, progress):
         vlayerA = dataobjects.getObjectFromUri(
@@ -132,18 +193,20 @@ class Intersection(ProcessingIntersection):
         del writer
     
     def defineCharacteristics(self):
-        self.name = 'Intersection'
-        self.group = 'Vector overlay tools'
-        self.addParameter(ParameterVector(self.INPUT, 'Input layer',
+        self.addParameter(ParameterVector(self.INPUT, 'Origin layer',
                           [ParameterVector.VECTOR_TYPE_ANY]))
         self.addParameter(ParameterVector(self.INPUT2,
-                          'Intersect layer',
+                          'Target layer',
                           [ParameterVector.VECTOR_TYPE_ANY]))
-        self.addParameter(ParameterList(self.FIELDSINPUT1,'Fields Input Layer'))
-        self.addParameter(ParameterList(self.FIELDSINPUT2,'Fields Touch Layer'))
-        self.addOutput(OutputVector(self.OUTPUT, 'Intersection'))
+        self.addParameter(ParameterList(self.FIELDSINPUT1,'Fields Origin Layer'))
+        self.addParameter(ParameterList(self.FIELDSINPUT2,'Fields Target Layer'))
+        #select the output
+        self.addOutput(self.outputFormats[self.outputType](self.OUTPUT, self.name))
     
 class Touch(Intersection):
+    
+    name = 'Touch'
+    group = 'Vector overlay tools'
     
     def processAlgorithm(self, progress):
         vlayerA = dataobjects.getObjectFromUri(
@@ -186,20 +249,12 @@ class Touch(Intersection):
                 except:
                     break
         del writer
-    
-    def defineCharacteristics(self):
-        self.name = 'Touch'
-        self.group = 'Vector overlay tools'
-        self.addParameter(ParameterVector(self.INPUT, 'Input layer',
-                          [ParameterVector.VECTOR_TYPE_ANY]))
-        self.addParameter(ParameterVector(self.INPUT2,
-                          'Touch layer',
-                          [ParameterVector.VECTOR_TYPE_ANY]))
-        self.addParameter(ParameterList(self.FIELDSINPUT1,'Fields Input Layer'))
-        self.addParameter(ParameterList(self.FIELDSINPUT2,'Fields Touch Layer'))
-        self.addOutput(OutputVector(self.OUTPUT, 'Touch'))
+
 
 class Contain(Touch):
+    
+    name = 'Contain'
+    group = 'Vector overlay tools'
     
     def processAlgorithm(self, progress):
         vlayerA = dataobjects.getObjectFromUri(
@@ -244,17 +299,6 @@ class Contain(Touch):
                     break
         del writer
     
-    def defineCharacteristics(self):
-        self.name = 'Contain'
-        self.group = 'Vector overlay tools'
-        self.addParameter(ParameterVector(self.INPUT, 'Input layer',
-                          [ParameterVector.VECTOR_TYPE_ANY]))
-        self.addParameter(ParameterVector(self.INPUT2,
-                          'Touch layer',
-                          [ParameterVector.VECTOR_TYPE_ANY]))
-        self.addParameter(ParameterList(self.FIELDSINPUT1,'Fields Input Layer'))
-        self.addParameter(ParameterList(self.FIELDSINPUT2,'Fields Touch Layer'))
-        self.addOutput(OutputVector(self.OUTPUT, 'Contain'))
 
 
 
@@ -263,7 +307,7 @@ def handleAlgorithmResults(alg, progress=None, showResults=True):
     reslayers = []
     if progress is None:
         progress = SilentProgress()
-    progress.setText(QCoreApplication.translate('ArpaGeoprocessing', 'Loading resulting layers'))
+    progress.setText(QCoreApplication.translate('ArpaGeoprocessing', 'Loading resulting layer'))
     i = 0
     for out in alg.outputs:
         progress.setPercentage(100 * i / float(len(alg.outputs)))

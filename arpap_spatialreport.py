@@ -188,53 +188,7 @@ class ARPAP_SpatialReport:
                 action)
             self.iface.removeToolBarIcon(action)
 
-            
-    def saveDialog( self,parent, filtering="JSON files (*.json *.JSON)"):
-        settings = QSettings()
-        dirName = settings.value( "/ARPAPGeoprocessing/lastConfigDir" )
-        encode = settings.value( "/ARPAPGeoprocessing/encoding" )
-        fileDialog = QgsEncodingFileDialog( parent, "Save config file", dirName, filtering, encode )
-        fileDialog.setDefaultSuffix( "json" )
-        fileDialog.setFileMode( QFileDialog.AnyFile )
-        fileDialog.setAcceptMode( QFileDialog.AcceptSave )
-        fileDialog.setConfirmOverwrite( True )
-        if not fileDialog.exec_() == QDialog.Accepted:
-                return None, None
-        files = fileDialog.selectedFiles()
-        settings.setValue("/ARPAPGeoprocessing/lastConfigDir", QFileInfo( unicode( files[0] ) ).absolutePath() )
-        return ( unicode( files[0] ), unicode( fileDialog.encoding() ) )
-    
-    def openDialog( self,parent, filtering="JSON files (*.json *.JSON)", dialogMode="SingleFile"):
-        settings = QSettings()
-        dirName = settings.value( "/ARPAPGeoprocessing/lastConfigDir" )
-        encode = settings.value( "/ARPAPGeoprocessing/encoding" )
-        fileDialog = QgsEncodingFileDialog( parent, "Open config file", dirName, filtering, encode )
-        fileDialog.setFileMode( QFileDialog.ExistingFiles )
-        fileDialog.setAcceptMode( QFileDialog.AcceptOpen )
-        if not fileDialog.exec_() == QDialog.Accepted:
-                return None, None
-        files = fileDialog.selectedFiles()
-        settings.setValue("/ARPAPGeoprocessing/lastConfigDir", QFileInfo( unicode( files[0] ) ).absolutePath() )
-        if dialogMode == "SingleFile":
-          return ( unicode( files[0] ), unicode( fileDialog.encoding() ) )
-        else:
-          return ( files, unicode( fileDialog.encoding() ) )
-      
-    def openShapeFileDialog( self,parent, filtering="Shape files (*.shp *.SHP)", dialogMode="SingleFile"):
-        settings = QSettings()
-        dirName = settings.value( "/ARPAPGeoprocessing/lastShapeDir" )
-        encode = settings.value( "/ARPAPGeoprocessing/encoding" )
-        fileDialog = QgsEncodingFileDialog( parent, "Open shape file", dirName, filtering, encode )
-        fileDialog.setFileMode( QFileDialog.ExistingFiles )
-        fileDialog.setAcceptMode( QFileDialog.AcceptOpen )
-        if not fileDialog.exec_() == QDialog.Accepted:
-                return None, None
-        files = fileDialog.selectedFiles()
-        settings.setValue("/ARPAPGeoprocessing/lastShapeDir", QFileInfo( unicode( files[0] ) ).absolutePath() )
-        if dialogMode == "SingleFile":
-          return ( unicode( files[0] ), unicode( fileDialog.encoding() ) )
-        else:
-          return ( files, unicode( fileDialog.encoding() ) )
+       
     
     def outConfigFile( self ):
         self.dlg.configFileOutput.clear()
@@ -251,7 +205,11 @@ class ARPAP_SpatialReport:
         self.dlg.configFileInput.setText( self.jsonFileInputConfigFile )
     
     def runAlgorithm(self):
-        algorithm = self.GeoprocessingAlgorithms[self.dlg.getGeoprocessingTypeData()]()
+        '''
+        Execute geo-operation GeoAlgorithm Processing based
+        '''
+        self.dlg.openChartDialogButton.setEnabled(False)
+        algorithm = self.GeoprocessingAlgorithms[self.dlg.getGeoprocessingTypeData()](self.dlg.getOutputType())
         self.dlg.algorithm = algorithm
         algorithm.provider = QGISAlgorithmProvider()
         algorithm.setParameterValue('ORIGIN',self.dlg.getComboboxData('originLayerSelect'))
@@ -268,13 +226,6 @@ class ARPAP_SpatialReport:
         self.dlg.reslayer = handleAlgorithmResults(algorithm,self.dlg)
         ProcessingConfig.setSettingValue(ProcessingConfig.USE_FILENAME_AS_LAYER_NAME,False)
         self.dlg.openChartDialogButton.setEnabled(True)
-        
-        
-        
-    def test(self):
-        fields = self.dlg.getSelectedFields('tableViewOriginLayerFields')
-        print fields[0].name()
-        
         
 
     def run(self):
