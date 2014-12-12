@@ -84,8 +84,21 @@
      </item>
      <item>
       <widget class="QPushButton" name="savePngFile">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>Save as Png</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="saveCSVFile">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Save as CSV</string>
        </property>
       </widget>
      </item>

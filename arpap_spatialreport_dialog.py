@@ -120,6 +120,10 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     def oneBackStep(self):
         self.changeIndex(-1)
         
+    def clearReslayer(self):
+        if id(self.sender()) == id(self.reslayer[0]):
+            self.reslayer = list()
+        
     def manageReportButton(self):
         if len(self.reslayer):
             self.labelProgress.setText(self.tr('Current output layer: '+self.reslayer[0].name()))
@@ -176,11 +180,11 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     def getSelectedFields(self,layer):
         tableView = getattr(self,layer)
         model = tableView.model()
-        fieldsToRet = []
+        fieldsToRet = dict()
         for r in range(model.rowCount()):
             item = model.item(r,0)
             if item.checkState() == Qt.Checked:
-                fieldsToRet.append(item.data())
+                fieldsToRet[r] = item.data()
         return fieldsToRet
             
     def setButtonNavigationStatus(self):
@@ -280,10 +284,10 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         self.addRuntimeStepLog("<span>GEOPORCESSING TYPE: <b>%s</b> </span>" % (currentInputValues['step1']['geoprocessingTypeData']))
         self.addRuntimeStepLog("<h3><u>3) %s:</u></h3>" % currentInputValues['step2']['title'])
         self.addRuntimeStepLog("<h4>Origin Layer Fields:</h4>")
-        for f in currentInputValues['step2']['originLayerFields']:
+        for f in currentInputValues['step2']['originLayerFields'].values():
             self.addRuntimeStepLog("%s" % f.name())
         self.addRuntimeStepLog("<h4>Target Layer Fields:</h4>")
-        for f in currentInputValues['step2']['targetLayerFields']:
+        for f in currentInputValues['step2']['targetLayerFields'].values():
             self.addRuntimeStepLog("%s" % f.name())
         self.addRuntimeStepLog("<h3><u>4) %s:</u></h3>" % currentInputValues['step3']['title'])
         self.addRuntimeStepLog("<span>OUTPUT TYPE: <b>%s</b> </span>" % (currentInputValues['step3']['selectOutputType']))

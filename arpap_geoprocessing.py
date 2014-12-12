@@ -97,11 +97,14 @@ class ParameterList(Parameter):
     def getValueAsCommandLineParameter(self):
         return '"' + unicode(self.value) + '"'
 
+class ParameterObject(ParameterList):
+    pass
+
 def combineVectorFields(fieldsA, fieldsB):
     fields = []
-    fields.extend(fieldsA)
-    namesA = [unicode(f.name()).lower() for f in fieldsA]
-    for field in fieldsB:
+    fields.extend(fieldsA.values())
+    namesA = [unicode(f.name()).lower() for f in fieldsA.values()]
+    for field in fieldsB.values():
         name = unicode(field.name()).lower()
         if name in namesA:
             idx = 2
@@ -161,6 +164,7 @@ class Intersection(ProcessingIntersection):
             progress.setPercentage(nElement / float(nFeat) * 100)
             geom = QgsGeometry(inFeatA.geometry())
             atMapA = inFeatA.attributes()
+            atMapA = [atMapA[i] for i in fieldsLayerA.keys()]
             intersects = index.intersects(geom.boundingBox())
             for i in intersects:
                 request = QgsFeatureRequest().setFilterFid(i)
@@ -169,13 +173,13 @@ class Intersection(ProcessingIntersection):
                 try:
                     if geom.intersects(tmpGeom):
                         atMapB = inFeatB.attributes()
+                        atMapB = [atMapB[i] for i in fieldsLayerB.keys()]
                         int_geom = QgsGeometry(geom.intersection(tmpGeom))
                         if int_geom.wkbType() == QGis.WKBUnknown:
                             int_com = geom.combine(tmpGeom)
                             int_sym = geom.symDifference(tmpGeom)
                             int_geom = QgsGeometry(int_com.difference(int_sym))
                         try:
-                            print wkbTypeGroups
                             if int_geom.wkbType() in wkbTypeGroups[wkbTypeGroups[int_geom.wkbType()]]:
                                 outFeat.setGeometry(int_geom)
                                 attrs = []
@@ -198,8 +202,8 @@ class Intersection(ProcessingIntersection):
         self.addParameter(ParameterVector(self.INPUT2,
                           'Target layer',
                           [ParameterVector.VECTOR_TYPE_ANY]))
-        self.addParameter(ParameterList(self.FIELDSINPUT1,'Fields Origin Layer'))
-        self.addParameter(ParameterList(self.FIELDSINPUT2,'Fields Target Layer'))
+        self.addParameter(ParameterObject(self.FIELDSINPUT1,'Fields Origin Layer'))
+        self.addParameter(ParameterObject(self.FIELDSINPUT2,'Fields Target Layer'))
         #select the output
         self.addOutput(self.outputFormats[self.outputType](self.OUTPUT, self.name))
     
@@ -231,11 +235,13 @@ class Touch(Intersection):
             progress.setPercentage(nElement / float(nFeat) * 100)
             geom = QgsGeometry(inFeatA.geometry())
             atMapA = inFeatA.attributes()
+            atMapA = [atMapA[i] for i in fieldsLayerA.keys()]
             for inFeatB in selectionB:
                 geomTarget = QgsGeometry(inFeatB.geometry())
                 try:
                     if geom.touches(geomTarget):
                         atMapB = inFeatB.attributes()
+                        atMapB = [atMapB[i] for i in fieldsLayerB.keys()]
                         try:
                             outFeat.setGeometry(geom)
                             attrs = []
@@ -280,11 +286,13 @@ class Contain(Touch):
             progress.setPercentage(nElement / float(nFeat) * 100)
             geom = QgsGeometry(inFeatA.geometry())
             atMapA = inFeatA.attributes()
+            atMapA = [atMapA[i] for i in fieldsLayerA.keys()]
             for inFeatB in selectionB:
                 geomTarget = QgsGeometry(inFeatB.geometry())
                 try:
                     if geomTarget.contains(geom):
                         atMapB = inFeatB.attributes()
+                        atMapA = [atMapB[i] for i in fieldsLayerB.keys()]
                         try:
                             outFeat.setGeometry(geom)
                             attrs = []

@@ -34,6 +34,8 @@ from qgis.gui import *
 import pygal
 from pygal import style
 from arpap_validation_inputdata import ValidationInputdata
+import numpy
+import csv
 
 
 
@@ -65,8 +67,11 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
         self.chartGeneratorButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/histogram.png'))
         self.statisticsGeneratorButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/mActionOpenTable.png'))
         self.savePngFile.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/mActionFileSave.png'))
+        self.saveCSVFile.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/mActionFileSave.png'))
         QObject.connect(self.chartGeneratorButton, SIGNAL('clicked()'),self.generateChart)
+        QObject.connect(self.statisticsGeneratorButton, SIGNAL('clicked()'),self.generateStatistics)
         QObject.connect(self.savePngFile, SIGNAL('clicked()'),self.savepng)
+        QObject.connect(self.saveCSVFile, SIGNAL('clicked()'),self.saveCSV)
         self.populateChartTypesCombo()
         self.populateCombosField()
         
@@ -130,6 +135,7 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
             frame.setScrollBarPolicy(Qt.Horizontal,Qt.ScrollBarAlwaysOff)        
             scene.addItem(self.webview)
             self.graphicsView.show()
+            self.savePngFile.setEnabled(True)
         else:
             self.showValidateErrors()
         
@@ -160,24 +166,105 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
         totValue = 0
         for f in features:
             key = f.attribute(categoryItem.text()) 
+            if not key:
+                key = self.tr('Unknown')
             value = f.attribute(valueItem.text())
             if key not in occourences:
                 occourences[key] = 0
+            if not value:
+                value = 0
             occourences[key] += value
             totValue += value
             
         
-        chart = pygal.Pie(fill=True, show_legend=False, style=style.BlueStyle)
+        chart = pygal.Pie(fill=True,label_font_size=4, style=style.BlueStyle)
         print occourences
         for key in occourences:
             chart.add(key, float(float(occourences[key])/float(totValue)))
         
         return chart
+    
+    def generateStatistics(self):
+        categoryItem = self.getSelectedListViewItem('category')
+        valueItem = self.getSelectedListViewItem('value')
+        layer = self.reslayer[0]
+        features = layer.getFeatures()
+        occourences = dict()
+        for f in features:
+            key = f.attribute(categoryItem.text()) 
+            if not key:
+                key = self.tr('Unknown')
+            value = f.attribute(valueItem.text())
+            if key not in occourences:
+                occourences[key] = list()
+            if not value:
+                value = 0
+            occourences[key].append(value)
+        # statistics calcs
+        self.statistics = dict()
+        model = QtGui.QStandardItemModel(self.statisticsTableView)
+        self.statisticsTableView.setModel(model)
+        c = 0
+        self.headersFieldsTableMethods = {
+                                     self.tr('Sum'):sum,
+                                     self.tr('Min'):min,
+                                     self.tr('Max'):max,
+                                     self.tr('Median'):numpy.median,
+                                     self.tr('Mean'):numpy.mean,
+                                     self.tr('Standard deviation'):numpy.std
+                                     }
+        print occourences
+        for columnName in self.headersFieldsTableMethods:
+            model.setHorizontalHeaderItem(self.headersFieldsTableMethods.keys().index(columnName),QtGui.QStandardItem(columnName))
+        for key in occourences:
+            if key not in self.statistics:
+                self.statistics[key] = dict()
+            rowToAppend = list()
+            for func in self.headersFieldsTableMethods:
+                self.statistics[key][func] = str(self.headersFieldsTableMethods[func](occourences[key]))
+                rowToAppend.append(QtGui.QStandardItem(self.statistics[key][func]))
+            model.appendRow(rowToAppend)
+            model.setVerticalHeaderItem(c,QtGui.QStandardItem(str(key)))
+            c += 1
+        self.saveCSVFile.setEnabled(True)
+    
+    def sum(self,data):
+        return sum(data)
+    def min(self,data):
+        return min(data)
+    def max(self,data):
+        return max(data)
         
     def savepng(self):
+        dialog = QtGui.QFileDialog()                                              
+        dialog.setAcceptMode(1)
+        dialog.setDefaultSuffix("png")
+        dialog.setNameFilters(["PNG files (*.png)", "All files (*)"])
+        if dialog.exec_() == 0:                                            
+            return
+        pathFileToSave = dialog.selectedFiles()[0]
         p = QtGui.QPixmap.grabWidget(self.graphicsView)
-        out = p.scaled(QSize(1000,1000))
-        res = out.save('/home/walter/chart.png')
+        res = p.save(pathFileToSave)
+        
+    def saveCSV(self):
+        dialog = QtGui.QFileDialog()                                              
+        dialog.setAcceptMode(1)
+        dialog.setDefaultSuffix("csv")
+        dialog.setNameFilters(["CSV files (*.csv)", "All files (*)"])
+        if dialog.exec_() == 0:                                             
+            return
+        pathFileToSave = dialog.selectedFiles()[0]
+        fileCSV = open(pathFileToSave, 'wb')
+        compilatorCSV = csv.writer( fileCSV, delimiter=';' )
+        header = ['']
+        header.extend(self.headersFieldsTableMethods.keys())
+        compilatorCSV.writerow(header)
+        for i in self.statistics:   
+            row = [i]
+            dataRow = [x.encode('utf-8') for x in self.statistics[i].values()]   
+            row.extend(dataRow)                     
+            compilatorCSV.writerow(row)
+        fileCSV.close()
         
     def showValidateErrors(self):
         QtGui.QMessageBox.warning( self, self.tr("ARPA Spatial Report"), self.tr( "Validation error:\n" ) + ';\n'.join(self.validation.getErrors()) )
