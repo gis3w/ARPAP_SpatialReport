@@ -125,11 +125,11 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             self.reslayer = list()
         
     def manageReportButton(self):
-        if len(self.reslayer):
-            self.labelProgress.setText(self.tr('Current output layer: '+self.reslayer[0].name()))
-            self.openChartDialogButton.setEnabled(True)
-        else:
-            self.labelProgress.setText('')
+        #if len(self.reslayer) and hasattr(self.reslayer[0],'name'):
+            #self.labelProgress.setText(self.tr('Current output layer: '+self.reslayer[0].name()))
+            #self.openChartDialogButton.setEnabled(True)
+        #else:
+        self.labelProgress.setText('')
             
         
     def populateCombosOriginTarget(self):

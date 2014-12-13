@@ -326,8 +326,10 @@ def handleAlgorithmResults(alg, progress=None, showResults=True):
                 if ProcessingConfig.getSetting(
                         ProcessingConfig.USE_FILENAME_AS_LAYER_NAME):
                     name = os.path.basename(out.value)
+                    name = name.split('.')[0]
                 else:
                     name = out.description
+                    # removing .ext from name if exixst
                 layer = dataobjects.load(out.value, name, alg.crs,
                         RenderingStyles.getStyle(alg.commandLineName(),
                         out.name))

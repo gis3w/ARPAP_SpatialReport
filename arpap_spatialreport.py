@@ -221,10 +221,11 @@ class ARPAP_SpatialReport:
             outputFile = self.dlg.outputShapeFile.text()
         elif self.dlg.getOutputType() == 'Spatialite':
             outputFile = self.dlg.outputSpatialite.text()
-        algorithm.setOutputValue('OUTPUT',outputFile)
+        #algorithm.setOutputValue('OUTPUT',outputFile)
+        algorithm.setOutputValue('OUTPUT','memory:test')
         algorithm.execute(self.dlg)
         self.dlg.reslayer = handleAlgorithmResults(algorithm,self.dlg)
-        QObject.connect(self.dlg.reslayer[0], SIGNAL('layerDeleted()'),self.dlg.clearReslayer)
+        #QObject.connect(self.dlg.reslayer[0], SIGNAL('layerDeleted()'),self.dlg.clearReslayer)
         ProcessingConfig.setSettingValue(ProcessingConfig.USE_FILENAME_AS_LAYER_NAME,False)
         self.dlg.openChartDialogButton.setEnabled(True)
         
