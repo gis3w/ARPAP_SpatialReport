@@ -20,6 +20,9 @@
  *                                                                         *
  ***************************************************************************/
 """
+import sys
+import os.path
+sys.path.append(os.path.dirname(__file__)+'/libs/')
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QObject, SIGNAL
 from PyQt4.QtGui import QAction, QIcon
 from qgis.core import *
@@ -28,7 +31,6 @@ from qgis.gui import *
 import resources_rc
 # Import the code for the dialog
 from arpap_spatialreport_dialog import ARPAP_SpatialReportDialog
-import os.path
 from processing.tools.dataobjects import *
 from processing.algs.qgis.QGISAlgorithmProvider import QGISAlgorithmProvider
 from processing.gui.SilentProgress import SilentProgress
