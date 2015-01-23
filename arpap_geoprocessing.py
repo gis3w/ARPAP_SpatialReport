@@ -28,6 +28,7 @@ import os
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
+from qgis.utils import iface
 from processing.algs.qgis.Intersection import Intersection as ProcessingIntersection, wkbTypeGroups
 from processing.gui.RenderingStyles import RenderingStyles
 from processing.core.parameters import ParameterVector, Parameter
@@ -36,6 +37,9 @@ from processing.core.ProcessingLog import ProcessingLog
 from processing.core.ProcessingConfig import ProcessingConfig
 from processing.tools import dataobjects, vector
 from processing.tools.vector import _toQgsField
+
+TYPE_NAMES = ['Float', 'Integer', 'String', 'Date']
+TYPES = [QVariant.Double, QVariant.Int, QVariant.String, QVariant.Date]
 
 class SpatialiteWriter(vector.VectorWriter):
 
@@ -117,11 +121,34 @@ def combineVectorFields(fieldsA, fieldsB):
 
     return fields
 
+def combineVectorFieldsQgisFields(fieldsA, fieldsB):
+    resFields = QgsFields()
+    resMapBFields = dict()
+    for q in fieldsA.values():
+        resFields.append(q)
+    namesA = [unicode(f.name()).lower() for f in fieldsA.values()]
+    for field in fieldsB.values():
+        origName = field.name()
+        name = unicode(field.name()).lower()
+        if name in namesA:
+            idx = 2
+            newName = name + '_' + unicode(idx)
+            while newName in namesA:
+                idx += 1
+                newName = name + '_' + unicode(idx)
+            field = QgsField(newName, field.type(), field.typeName())
+        resMapBFields[field.name()] = origName
+        resFields.append(field)
+
+    return (resFields,resMapBFields)
+
 class Intersection(ProcessingIntersection):
     INPUT = 'ORIGIN'
     INPUT2 = 'TARGET'
     FIELDSINPUT1 = 'FIELDSORIGIN'
     FIELDSINPUT2 = 'FIELDSTARGET'
+    EXPRESSIONSINPUT1 = 'EXPRESSIONSORIGIN'
+    EXPRESSIONSINPUT2 = 'EXPRESSIONSTARGET'
     OUTPUT = 'OUTPUT'
     
     outputFormats = {
@@ -135,9 +162,80 @@ class Intersection(ProcessingIntersection):
     name = 'Intersection'
     group = 'Vector overlay tools'
     
+    vproviderA = None
+    inFeatA = QgsFeature()
+    inFeatB = QgsFeature()
+    outFeat = QgsFeature()
+    fields = None
+    mapBFields = None
+    writer = None
+    
+    
     def __init__(self,outputType):
         self.outputType = outputType
         ProcessingIntersection.__init__(self)
+        
+    def setExpressionObj(self):
+        #set expression calculator if not empty
+        self.expA = dict()
+        self.expB = dict()
+        if bool(self.expressionLayerA) or bool(self.expressionLayerB):
+            if bool(self.expressionLayerA):
+                for field in self.expressionLayerA.keys():
+                    tempDict = {'exp':None,'val':None}
+                    tempDict['exp'] = QgsExpression(self.expressionLayerA[field])
+    
+                    da = QgsDistanceArea()
+                    da.setSourceCrs(self.vproviderA.crs().srsid())
+                    canvas = iface.mapCanvas()
+                    da.setEllipsoidalMode(canvas.mapRenderer().hasCrsTransformEnabled())
+                    da.setEllipsoid(QgsProject.instance().readEntry('Measure',
+                                                                    '/Ellipsoid',
+                                                                    GEO_NONE)[0])
+                    tempDict['exp'].setGeomCalculator(da)
+                    self.expA[field] = tempDict
+            else:
+                for field in self.expressionLayerB.keys():
+                    tempDict = {'exp':None,'val':None}
+                    tempDict['exp'] = QgsExpression(self.expressionLayerB[field])
+    
+                    da = QgsDistanceArea()
+                    da.setSourceCrs(self.vproviderA.crs().srsid())
+                    canvas = iface.mapCanvas()
+                    da.setEllipsoidalMode(canvas.mapRenderer().hasCrsTransformEnabled())
+                    da.setEllipsoid(QgsProject.instance().readEntry('Measure',
+                                                                    '/Ellipsoid',
+                                                                    GEO_NONE)[0])
+                    tempDict['exp'].setGeomCalculator(da)
+                    self.expB[self.mapBFields[field]] = tempDict
+    
+    def setOutFeat(self,geom):
+        self.outFeat.setGeometry(geom)
+        self.outFeat.initAttributes(len(self.fields))
+        self.outFeat.setFields(self.fields)
+        if bool(self.expA) or bool(self.expB):
+            if bool(self.expA):
+                for f in self.expressionLayerA.keys() :
+                    self.expA[f]['val'] = self.expA[f]['exp'].evaluate(self.inFeatA)
+            else:
+                for f in self.expressionLayerB.keys() :
+                    self.expB[f]['val'] = self.expB[f]['exp'].evaluate(self.inFeatB)
+        
+        for fld in self.fields:
+            #check if in field a or field b                                    
+            if self.inFeatA.fieldNameIndex(fld.name()) >= 0:
+                self.outFeat[fld.name()] = self.inFeatA[fld.name()]
+            
+            if bool(self.expA) and fld.name() in self.expA.keys():
+                self.outFeat[fld.name()] = self.expA[fld.name()]['val']
+                
+            if fld.name() in self.mapBFields.keys() and self.inFeatB.fieldNameIndex(self.mapBFields[fld.name()]) >= 0:
+                self.outFeat[fld.name()] = self.inFeatB[self.mapBFields[fld.name()]]
+                
+            if bool(self.expB) and fld.name() in self.expB.keys():
+                self.outFeat[fld.name()] = self.expB[fld.name()]['val']
+        
+        self.writer.addFeature(self.outFeat)
     
     def processAlgorithm(self, progress):
         vlayerA = dataobjects.getObjectFromUri(
@@ -146,34 +244,33 @@ class Intersection(ProcessingIntersection):
                 self.getParameterValue(self.INPUT2))
         fieldsLayerA = self.getParameterValue(self.FIELDSINPUT1)
         fieldsLayerB = self.getParameterValue(self.FIELDSINPUT2)
+        self.expressionLayerA = self.getParameterValue(self.EXPRESSIONSINPUT1)
+        self.expressionLayerB = self.getParameterValue(self.EXPRESSIONSINPUT2)
         
-        vproviderA = vlayerA.dataProvider()
-        fields = combineVectorFields(fieldsLayerA, fieldsLayerB)
-        writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(fields,
-                vproviderA.geometryType(), vproviderA.crs())
-        inFeatA = QgsFeature()
-        inFeatB = QgsFeature()
-        outFeat = QgsFeature()
+        
+        self.vproviderA = vlayerA.dataProvider()
+        self.fields, self.mapBFields = combineVectorFieldsQgisFields(fieldsLayerA, fieldsLayerB)
+        self.writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(self.fields.toList(),
+                self.vproviderA.geometryType(), self.vproviderA.crs())
+        
+        self.setExpressionObj()
+        
         index = vector.spatialindex(vlayerB)
         nElement = 0
         selectionA = vector.features(vlayerA)
         nFeat = len(selectionA)
-        progress.setText(QCoreApplication.translate('ArpaGeoprocessing', 'Running algorithm...'))
-        for inFeatA in selectionA:
+        progress.setText(QCoreApplication.translate('ArpaGeoprocessing', 'Running algorithm...'))        
+        for self.inFeatA in selectionA:
             nElement += 1
             progress.setPercentage(nElement / float(nFeat) * 100)
-            geom = QgsGeometry(inFeatA.geometry())
-            atMapA = inFeatA.attributes()
-            atMapA = [atMapA[i] for i in fieldsLayerA.keys()]
+            geom = QgsGeometry(self.inFeatA.geometry())
             intersects = index.intersects(geom.boundingBox())
             for i in intersects:
                 request = QgsFeatureRequest().setFilterFid(i)
-                inFeatB = vlayerB.getFeatures(request).next()
-                tmpGeom = QgsGeometry(inFeatB.geometry())
+                self.inFeatB = vlayerB.getFeatures(request).next()
+                tmpGeom = QgsGeometry(self.inFeatB.geometry())
                 try:
                     if geom.intersects(tmpGeom):
-                        atMapB = inFeatB.attributes()
-                        atMapB = [atMapB[i] for i in fieldsLayerB.keys()]
                         int_geom = QgsGeometry(geom.intersection(tmpGeom))
                         if int_geom.wkbType() == QGis.WKBUnknown:
                             int_com = geom.combine(tmpGeom)
@@ -181,20 +278,17 @@ class Intersection(ProcessingIntersection):
                             int_geom = QgsGeometry(int_com.difference(int_sym))
                         try:
                             if int_geom.wkbType() in wkbTypeGroups[wkbTypeGroups[int_geom.wkbType()]]:
-                                outFeat.setGeometry(int_geom)
-                                attrs = []
-                                attrs.extend(atMapA)
-                                attrs.extend(atMapB)
-                                outFeat.setAttributes(attrs)
-                                writer.addFeature(outFeat)
-                        except:
+                                self.setOutFeat(int_geom)
+                                
+                        except Exception as e:
+                            print e
                             ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Feature geometry error: One or more output features ignored due to invalid geometry.')
                             continue
                 except:
                     break
 
 
-        del writer
+        del self.writer
     
     def defineCharacteristics(self):
         self.addParameter(ParameterVector(self.INPUT, 'Origin layer',
@@ -204,6 +298,8 @@ class Intersection(ProcessingIntersection):
                           [ParameterVector.VECTOR_TYPE_ANY]))
         self.addParameter(ParameterObject(self.FIELDSINPUT1,'Fields Origin Layer'))
         self.addParameter(ParameterObject(self.FIELDSINPUT2,'Fields Target Layer'))
+        self.addParameter(ParameterObject(self.EXPRESSIONSINPUT1,'Fields with expression Origin Layer'))
+        self.addParameter(ParameterObject(self.EXPRESSIONSINPUT2,'Fields with expression Target Layer'))
         #select the output
         self.addOutput(self.outputFormats[self.outputType](self.OUTPUT, self.name))
     
@@ -223,18 +319,18 @@ class Touch(Intersection):
         fields = combineVectorFields(fieldsLayerA, fieldsLayerB)
         writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(fields,
                 vproviderA.geometryType(), vproviderA.crs())
-        inFeatA = QgsFeature()
+        self.inFeatA = QgsFeature()
         inFeatB = QgsFeature()
         outFeat = QgsFeature()
         nElement = 0
         selectionA = vector.features(vlayerA)
         selectionB = vector.features(vlayerB)
         nFeat = len(selectionA)
-        for inFeatA in selectionA:
+        for self.inFeatA in selectionA:
             nElement += 1
             progress.setPercentage(nElement / float(nFeat) * 100)
-            geom = QgsGeometry(inFeatA.geometry())
-            atMapA = inFeatA.attributes()
+            geom = QgsGeometry(self.inFeatA.geometry())
+            atMapA = self.inFeatA.attributes()
             atMapA = [atMapA[i] for i in fieldsLayerA.keys()]
             for inFeatB in selectionB:
                 geomTarget = QgsGeometry(inFeatB.geometry())
@@ -269,43 +365,37 @@ class Contain(Touch):
                 self.getParameterValue(self.INPUT2))
         fieldsLayerA = self.getParameterValue(self.FIELDSINPUT1)
         fieldsLayerB = self.getParameterValue(self.FIELDSINPUT2)
-        vproviderA = vlayerA.dataProvider()
+        self.expressionLayerA = self.getParameterValue(self.EXPRESSIONSINPUT1)
+        self.expressionLayerB = self.getParameterValue(self.EXPRESSIONSINPUT2)
+        self.vproviderA = vlayerA.dataProvider()
 
-        fields = combineVectorFields(fieldsLayerA, fieldsLayerB)
-        writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(fields,
-                vproviderA.geometryType(), vproviderA.crs())
-        inFeatA = QgsFeature()
-        inFeatB = QgsFeature()
-        outFeat = QgsFeature()
+        self.vproviderA = vlayerA.dataProvider()
+        self.fields, self.mapBFields = combineVectorFieldsQgisFields(fieldsLayerA, fieldsLayerB)
+        self.writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(self.fields.toList(),
+                self.vproviderA.geometryType(), self.vproviderA.crs())
+        
+        self.setExpressionObj()
+      
         nElement = 0
         selectionA = vector.features(vlayerA)
         selectionB = vector.features(vlayerB)
         nFeat = len(selectionA)
-        for inFeatA in selectionA:
+        for self.inFeatA in selectionA:
             nElement += 1
             progress.setPercentage(nElement / float(nFeat) * 100)
-            geom = QgsGeometry(inFeatA.geometry())
-            atMapA = inFeatA.attributes()
-            atMapA = [atMapA[i] for i in fieldsLayerA.keys()]
-            for inFeatB in selectionB:
-                geomTarget = QgsGeometry(inFeatB.geometry())
+            geom = QgsGeometry(self.inFeatA.geometry())
+            for self.inFeatB in selectionB:
+                geomTarget = QgsGeometry(self.inFeatB.geometry())
                 try:
                     if geomTarget.contains(geom):
-                        atMapB = inFeatB.attributes()
-                        atMapA = [atMapB[i] for i in fieldsLayerB.keys()]
                         try:
-                            outFeat.setGeometry(geom)
-                            attrs = []
-                            attrs.extend(atMapA)
-                            attrs.extend(atMapB)
-                            outFeat.setAttributes(attrs)
-                            writer.addFeature(outFeat)
+                            self.setOutFeat(geom)
                         except:
                             ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Feature geometry error: One or more output features ignored due to invalid geometry.')
                             continue
                 except:
                     break
-        del writer
+        del self.writer
     
 
 
@@ -337,7 +427,6 @@ def handleAlgorithmResults(alg, progress=None, showResults=True):
                 reslayers.append(layer)
             except Exception, e:
                 wrongLayers.append(out)
-                print e
             i += 1
     return reslayers
      

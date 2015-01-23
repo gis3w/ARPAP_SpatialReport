@@ -47,6 +47,14 @@ class ARPAP_SpatialReportFieldCalculatorDialog(QtGui.QDialog, Ui_QgsFieldCalcula
         QObject.connect(self.mButtonBox, SIGNAL('accepted()'),self.success)
         self.updateLayer()
         self.populateComboFieldType()
+        self.mNewFieldGroupBox.toggled.connect(self.toggleExistingGroup)
+        self.mUpdateExistingGroupBox.toggled.connect(self.toggleNewGroup)
+        
+    def toggleExistingGroup(self, toggled):
+        self.mUpdateExistingGroupBox.setChecked(not toggled)
+
+    def toggleNewGroup(self, toggled):
+        self.mNewFieldGroupBox.setChecked(not toggled)
         
     def updateLayer(self):
         self.builder.setLayer(self.layer)

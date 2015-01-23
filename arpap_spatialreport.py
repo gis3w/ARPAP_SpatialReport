@@ -218,6 +218,8 @@ class ARPAP_SpatialReport:
         algorithm.setParameterValue('TARGET',self.dlg.getComboboxData('targetLayerSelect'))
         algorithm.setParameterValue('FIELDSORIGIN',self.dlg.getSelectedFields('tableViewOriginLayerFields'))
         algorithm.setParameterValue('FIELDSTARGET',self.dlg.getSelectedFields('tableViewTargetLayerFields'))
+        algorithm.setParameterValue('EXPRESSIONSORIGIN',self.dlg.getSelectedFieldsNameWithExpression('tableViewOriginLayerFields'))
+        algorithm.setParameterValue('EXPRESSIONSTARGET',self.dlg.getSelectedFieldsNameWithExpression('tableViewTargetLayerFields'))
         ProcessingConfig.setSettingValue(ProcessingConfig.USE_FILENAME_AS_LAYER_NAME,True)
         if self.dlg.getOutputType() == 'Shape File':
             outputFile = self.dlg.outputShapeFile.text()

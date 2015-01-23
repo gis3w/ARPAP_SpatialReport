@@ -20,6 +20,9 @@
  *                                                                         *
  ***************************************************************************/
 """
+from ARPAP_SpatialReport import arpap_geoprocessing
+from PySide.QtCore import QModelIndex
+
 
 __author__ = 'Walter Lorenzetti'
 __date__ = 'December 2014'
@@ -46,6 +49,7 @@ import resources_rc
 
 from arpap_spatialreport_fieldcalculator_dialog import ARPAP_SpatialReportFieldCalculatorDialog
 from arpap_spatialreport_dialog_chart import ARPAP_SpatialReportDialogChart
+from arpap_geoprocessing import TYPE_NAMES, TYPES
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -159,7 +163,7 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             self._populateTableFieldsList('targetLayerSelect', self.tableViewTargetLayerFields)
         
     def _populateTableFieldsList(self,comboName,tableView):
-        headersFieldsTable = ['Field name','Data type','Length','Precision','Actions']
+        headersFieldsTable = ['Field name','Data type','Length','Precision','Expression','Actions']
         fields = self.getComboboxData(comboName).dataProvider().fields()            
         model = QtGui.QStandardItemModel(tableView)
         for columnName in headersFieldsTable:
@@ -185,6 +189,19 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             item = model.item(r,0)
             if item.checkState() == Qt.Checked:
                 fieldsToRet[r] = item.data()
+                
+        return fieldsToRet
+    
+    def getSelectedFieldsNameWithExpression(self,layer):
+        tableView = getattr(self,layer)
+        model = tableView.model()
+        fieldsToRet = dict()
+        for r in range(model.rowCount()):
+            item = model.item(r,0)
+            expressionItem = model.item(r,4)
+            if item.checkState() == Qt.Checked and expressionItem:
+                fieldsToRet[item.text()] = expressionItem.text()
+                
         return fieldsToRet
             
     def setButtonNavigationStatus(self):
@@ -300,16 +317,60 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     
     def openFieldCalculatorOrigin(self):
         self.openFieldCalculator('origin')
-        #fieldCalculatorDialog.show()
     
     def openFieldCalculatorTarget(self):
         self.openFieldCalculator('target')
+        
+    def getTebleViewRowNumberByFieldName(self,fieldName,tableViewName):
+        tableView = getattr(self, tableViewName)
+        model = tableView.model()
+        for r in range(model.rowCount()):
+            item = model.item(r,0)
+            if item.text() == fieldName:
+                return r
     
     def openFieldCalculator(self,source='origin'):
+        tableViewName = 'tableView'+ source.capitalize() + 'LayerFields'
+        tableView = getattr(self, tableViewName)
         fieldCalculatorDialog =  ARPAP_SpatialReportFieldCalculatorDialog(self.getComboboxData(source+'LayerSelect'))
         result = fieldCalculatorDialog.exec_()
         if result == QtGui.QDialog.Accepted:
-            print fieldCalculatorDialog.mOutputFieldTypeComboBox.currentIndex()
+            if fieldCalculatorDialog.mUpdateExistingGroupBox.isChecked():
+                #find row field in tableview
+                #print fieldCalculatorDialog.mExistingFieldComboBox.currentText()
+                row = self.getTebleViewRowNumberByFieldName(fieldCalculatorDialog.mExistingFieldComboBox.currentText(),tableViewName)
+                expressionItem = tableView.model().item(row,4)
+                if expressionItem:
+                    expressionItem.setText(fieldCalculatorDialog.builder.expressionText())
+                else:
+                    expressionItem = QtGui.QStandardItem(fieldCalculatorDialog.builder.expressionText())
+                    tableView.model().setItem(row,4,expressionItem)
+                #set expression
+            else:
+                data = {'objtype':'fieldCalculator',
+                        'name':fieldCalculatorDialog.mOutputFieldNameLineEdit.text(),
+                        'type':fieldCalculatorDialog.mOutputFieldTypeComboBox.currentText(),
+                        'length':fieldCalculatorDialog.mOutputFieldWidthSpinBox.value(),
+                        'precision':fieldCalculatorDialog.mOutputFieldPrecisionSpinBox.value(),
+                        'expression':fieldCalculatorDialog.builder.expressionText()}
+                itemName = QtGui.QStandardItem(fieldCalculatorDialog.mOutputFieldNameLineEdit.text())
+                itemName.setData(QgsField(data['name'],TYPES[fieldCalculatorDialog.mOutputFieldTypeComboBox.currentIndex()],'',int(data['length']),int(data['precision'])))
+                itemName.setCheckable(True)
+                itemName.setCheckState(Qt.Checked)
+                itemName.setSelectable(False)
+                itemName.setEditable(False)
+                itemType = QtGui.QStandardItem(data['type'])
+                itemLength = QtGui.QStandardItem(str(data['length']))
+                itemPrecision = QtGui.QStandardItem(str(data['precision']))
+                itemExpression = QtGui.QStandardItem(data['expression'])
+                #actions = QtGui.QStandardItem('actions')
+                model = tableView.model()
+                model.appendRow([itemName,itemType,itemLength,itemPrecision,itemExpression])
+                #removeButton = QtGui.QPushButton(self.tr('Remove'),clicked=self.removeTableFieldsRow)
+                #tableView.setIndexWidget(actions.index(),removeButton)
+    
+    def removeTableFieldsRow(self):
+        print self.sender().parent()
             
     def openOutputShapeFileDialog(self):
         self.outputShapeFile.clear()
