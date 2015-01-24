@@ -25,8 +25,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.98994949"
-     inkscape:cx="289.76445"
-     inkscape:cy="677.22098"
+     inkscape:cx="291.78476"
+     inkscape:cy="384.22784"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -43,7 +43,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -72,5 +72,71 @@
          x="293.58109"
          y="299.9093"
          style="font-size:171.37866211px">ASR</tspan></text>
+    <rect
+       style="fill:none;stroke:#ff0000;stroke-width:5.11930704;stroke-miterlimit:4;stroke-dasharray:none"
+       id="rect2985-7"
+       width="136.4807"
+       height="108.25734"
+       x="37.089638"
+       y="578.01007"
+       ry="17.446033"
+       inkscape:export-filename="/home/walter/.qgis2/python/plugins/ARPAP_SpatialReport/icons/intersection.png"
+       inkscape:export-xdpi="63.506065"
+       inkscape:export-ydpi="63.506065" />
+    <rect
+       style="fill:none;stroke:#008000;stroke-width:4.13026667;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect3755"
+       width="106.24638"
+       height="44.215919"
+       x="121.81847"
+       y="613.51556"
+       ry="13.622362"
+       inkscape:export-filename="/home/walter/.qgis2/python/plugins/ARPAP_SpatialReport/icons/intersection.png"
+       inkscape:export-xdpi="63.506065"
+       inkscape:export-ydpi="63.506065" />
+    <rect
+       style="fill:none;stroke:#ff0000;stroke-width:5.2549262;stroke-miterlimit:4;stroke-dasharray:none"
+       id="rect2985-7-7"
+       width="136.34508"
+       height="114.18263"
+       x="289.69559"
+       y="574.03723"
+       ry="18.400913"
+       inkscape:export-filename="/home/walter/.qgis2/python/plugins/ARPAP_SpatialReport/icons/touch.png"
+       inkscape:export-xdpi="60.282574"
+       inkscape:export-ydpi="60.282574" />
+    <rect
+       style="fill:none;stroke:#008000;stroke-width:4.06080627;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect3755-5"
+       width="100.25492"
+       height="45.295532"
+       x="430.89044"
+       y="625.6026"
+       ry="13.954978"
+       inkscape:export-filename="/home/walter/.qgis2/python/plugins/ARPAP_SpatialReport/icons/touch.png"
+       inkscape:export-xdpi="60.282574"
+       inkscape:export-ydpi="60.282574" />
+    <rect
+       style="fill:none;stroke:#ff0000;stroke-width:4.95623922;stroke-miterlimit:4;stroke-dasharray:none"
+       id="rect2985-7-7-1"
+       width="136.64377"
+       height="101.34933"
+       x="66.302513"
+       y="769.85748"
+       ry="16.332785"
+       inkscape:export-filename="/home/walter/.qgis2/python/plugins/ARPAP_SpatialReport/icons/contain.png"
+       inkscape:export-xdpi="67.724869"
+       inkscape:export-ydpi="67.724869" />
+    <rect
+       style="fill:none;stroke:#008000;stroke-width:3.94924641;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect3755-5-3"
+       width="106.42739"
+       height="40.356331"
+       x="83.342186"
+       y="802.32355"
+       ry="12.433272"
+       inkscape:export-filename="/home/walter/.qgis2/python/plugins/ARPAP_SpatialReport/icons/contain.png"
+       inkscape:export-xdpi="67.724869"
+       inkscape:export-ydpi="67.724869" />
   </g>
 </svg>

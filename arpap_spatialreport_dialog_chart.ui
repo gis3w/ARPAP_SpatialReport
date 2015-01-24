@@ -38,7 +38,7 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Categolry Field:</string>
+        <string>Category Field:</string>
        </property>
       </widget>
      </item>
@@ -88,7 +88,7 @@
         <bool>false</bool>
        </property>
        <property name="text">
-        <string>Save as Png</string>
+        <string>Save Chart as Png</string>
        </property>
       </widget>
      </item>
@@ -98,7 +98,7 @@
         <bool>false</bool>
        </property>
        <property name="text">
-        <string>Save as CSV</string>
+        <string>Export Statistics as CSV</string>
        </property>
       </widget>
      </item>

@@ -247,7 +247,6 @@ class Intersection(ProcessingIntersection):
         self.expressionLayerA = self.getParameterValue(self.EXPRESSIONSINPUT1)
         self.expressionLayerB = self.getParameterValue(self.EXPRESSIONSINPUT2)
         
-        
         self.vproviderA = vlayerA.dataProvider()
         self.fields, self.mapBFields = combineVectorFieldsQgisFields(fieldsLayerA, fieldsLayerB)
         self.writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(self.fields.toList(),
@@ -315,13 +314,16 @@ class Touch(Intersection):
                 self.getParameterValue(self.INPUT2))
         fieldsLayerA = self.getParameterValue(self.FIELDSINPUT1)
         fieldsLayerB = self.getParameterValue(self.FIELDSINPUT2)
-        vproviderA = vlayerA.dataProvider()
-        fields = combineVectorFields(fieldsLayerA, fieldsLayerB)
-        writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(fields,
-                vproviderA.geometryType(), vproviderA.crs())
-        self.inFeatA = QgsFeature()
-        inFeatB = QgsFeature()
-        outFeat = QgsFeature()
+        self.expressionLayerA = self.getParameterValue(self.EXPRESSIONSINPUT1)
+        self.expressionLayerB = self.getParameterValue(self.EXPRESSIONSINPUT2)
+        
+        self.vproviderA = vlayerA.dataProvider()
+        self.fields, self.mapBFields = combineVectorFieldsQgisFields(fieldsLayerA, fieldsLayerB)
+        self.writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(self.fields.toList(),
+                self.vproviderA.geometryType(), self.vproviderA.crs())
+        
+        self.setExpressionObj()
+        
         nElement = 0
         selectionA = vector.features(vlayerA)
         selectionB = vector.features(vlayerB)
@@ -330,27 +332,18 @@ class Touch(Intersection):
             nElement += 1
             progress.setPercentage(nElement / float(nFeat) * 100)
             geom = QgsGeometry(self.inFeatA.geometry())
-            atMapA = self.inFeatA.attributes()
-            atMapA = [atMapA[i] for i in fieldsLayerA.keys()]
-            for inFeatB in selectionB:
-                geomTarget = QgsGeometry(inFeatB.geometry())
+            for self.inFeatB in selectionB:
+                geomTarget = QgsGeometry(self.inFeatB.geometry())
                 try:
                     if geom.touches(geomTarget):
-                        atMapB = inFeatB.attributes()
-                        atMapB = [atMapB[i] for i in fieldsLayerB.keys()]
                         try:
-                            outFeat.setGeometry(geom)
-                            attrs = []
-                            attrs.extend(atMapA)
-                            attrs.extend(atMapB)
-                            outFeat.setAttributes(attrs)
-                            writer.addFeature(outFeat)
+                            self.setOutFeat(geom)
                         except:
                             ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Feature geometry error: One or more output features ignored due to invalid geometry.')
                             continue
                 except:
                     break
-        del writer
+        del self.writer
 
 
 class Contain(Touch):

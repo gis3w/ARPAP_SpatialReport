@@ -13,5 +13,8 @@
         <file>icons/mActionFileSave.png</file>
         <file>icons/mActionOpenTable.png</file>
         <file>icons/histogram.png</file>
+        <file>icons/intersection.png</file>
+        <file>icons/contain.png</file>
+        <file>icons/touch.png</file>
     </qresource>
 </RCC>
