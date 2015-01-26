@@ -37,6 +37,8 @@ from processing.core.ProcessingLog import ProcessingLog
 from processing.core.ProcessingConfig import ProcessingConfig
 from processing.tools import dataobjects, vector
 from processing.tools.vector import _toQgsField
+from psql.arpap_psql import arpap_spatialreport_psql
+
 
 TYPE_NAMES = ['Float', 'Integer', 'String', 'Date']
 TYPES = [QVariant.Double, QVariant.Int, QVariant.String, QVariant.Date]
@@ -74,6 +76,35 @@ class SpatialiteWriter(vector.VectorWriter):
         self.writer = QgsVectorFileWriter(self.fileName, encoding,
             qgsfields, geometryType, crs, OGRCodes[extension],["SPATIALITE=YES",])
 
+class PostgisWriter(vector.VectorWriter):
+
+    def __init__(self, dbData, encoding, fields, geometryType,
+                 crs, options=None):
+        self.dbData = dbData
+        self.isMemory = False
+        self.memLayer = None
+        self.writer = None
+        
+        class PGWriter():
+            
+            def __init__(self,dbData,fields,geometryType,crs):
+                self.dbData = dbData
+                self.fields = fields
+                self.geometryType = geometryType
+                self.crs = crs
+                self.PSQL = arpap_spatialreport_psql(iface)
+                self.PSQL.setConnection(self.dbData['connection'])
+                self.PSQL.createTable(self.dbData['table'], ['field1','field2'], True, schema='ublic')
+                
+                
+                
+                #create tabel in db
+                
+            
+            
+
+
+        self.writer = PGWriter(self.dbData,fields, geometryType, crs)
 
 
 class OutputSpatialite(OutputVector):
@@ -83,6 +114,22 @@ class OutputSpatialite(OutputVector):
             self.encoding = settings.value('/Processing/encoding', 'System', str)
     
         w = SpatialiteWriter(self.value, self.encoding, fields, geomType,
+                         crs, options)
+        self.memoryLayer = w.memLayer
+        return w
+    
+class OutputPostgis(OutputVector):
+    def __init__(self,name='', description='', hidden=False):
+        OutputVector.__init__(self, name, description,hidden)
+        self.hidden = True
+
+        
+    def getVectorWriter(self, fields, geomType, crs, options=None):
+        if self.encoding is None:
+            settings = QSettings()
+            self.encoding = settings.value('/Processing/encoding', 'System', str)
+    
+        w = PostgisWriter(self.value, self.encoding, fields, geomType,
                          crs, options)
         self.memoryLayer = w.memLayer
         return w
@@ -154,7 +201,7 @@ class Intersection(ProcessingIntersection):
     outputFormats = {
                'Shape File':OutputVector,
                'Spatialite':OutputSpatialite,
-               'Postgis':OutputVector,
+               'Postgis':OutputPostgis,
                }
     
     outputType = 'Shape File'
@@ -162,6 +209,10 @@ class Intersection(ProcessingIntersection):
     name = 'Intersection'
     group = 'Vector overlay tools'
     
+    vlayerA = None
+    vlayerB = None
+    fieldsLayerA = None
+    fieldsLayerB = None
     vproviderA = None
     inFeatA = QgsFeature()
     inFeatB = QgsFeature()
@@ -174,6 +225,24 @@ class Intersection(ProcessingIntersection):
     def __init__(self,outputType):
         self.outputType = outputType
         ProcessingIntersection.__init__(self)
+        
+    def initAlgorithm(self,progress):
+        self.vlayerA = dataobjects.getObjectFromUri(
+                self.getParameterValue(self.INPUT))
+        self.vlayerB = dataobjects.getObjectFromUri(
+                self.getParameterValue(self.INPUT2))
+        self.fieldsLayerA = self.getParameterValue(self.FIELDSINPUT1)
+        self.fieldsLayerB = self.getParameterValue(self.FIELDSINPUT2)
+        self.expressionLayerA = self.getParameterValue(self.EXPRESSIONSINPUT1)
+        self.expressionLayerB = self.getParameterValue(self.EXPRESSIONSINPUT2)
+        # postgis parameter
+        
+        self.vproviderA = self.vlayerA.dataProvider()
+        progress.setText(QCoreApplication.translate('ArpaGeoprocessing', 'Combine fields...')) 
+        self.fields, self.mapBFields = combineVectorFieldsQgisFields(self.fieldsLayerA, self.fieldsLayerB)
+        progress.setText(QCoreApplication.translate('ArpaGeoprocessing', 'Set output...')) 
+        self.writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(self.fields.toList(),
+                self.vproviderA.geometryType(), self.vproviderA.crs())
         
     def setExpressionObj(self):
         #set expression calculator if not empty
@@ -238,25 +307,13 @@ class Intersection(ProcessingIntersection):
         self.writer.addFeature(self.outFeat)
     
     def processAlgorithm(self, progress):
-        vlayerA = dataobjects.getObjectFromUri(
-                self.getParameterValue(self.INPUT))
-        vlayerB = dataobjects.getObjectFromUri(
-                self.getParameterValue(self.INPUT2))
-        fieldsLayerA = self.getParameterValue(self.FIELDSINPUT1)
-        fieldsLayerB = self.getParameterValue(self.FIELDSINPUT2)
-        self.expressionLayerA = self.getParameterValue(self.EXPRESSIONSINPUT1)
-        self.expressionLayerB = self.getParameterValue(self.EXPRESSIONSINPUT2)
         
-        self.vproviderA = vlayerA.dataProvider()
-        self.fields, self.mapBFields = combineVectorFieldsQgisFields(fieldsLayerA, fieldsLayerB)
-        self.writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(self.fields.toList(),
-                self.vproviderA.geometryType(), self.vproviderA.crs())
-        
+        self.initAlgorithm(progress)
         self.setExpressionObj()
         
-        index = vector.spatialindex(vlayerB)
+        index = vector.spatialindex(self.vlayerB)
         nElement = 0
-        selectionA = vector.features(vlayerA)
+        selectionA = vector.features(self.vlayerA)
         nFeat = len(selectionA)
         progress.setText(QCoreApplication.translate('ArpaGeoprocessing', 'Running algorithm...'))        
         for self.inFeatA in selectionA:
@@ -266,7 +323,7 @@ class Intersection(ProcessingIntersection):
             intersects = index.intersects(geom.boundingBox())
             for i in intersects:
                 request = QgsFeatureRequest().setFilterFid(i)
-                self.inFeatB = vlayerB.getFeatures(request).next()
+                self.inFeatB = self.vlayerB.getFeatures(request).next()
                 tmpGeom = QgsGeometry(self.inFeatB.geometry())
                 try:
                     if geom.intersects(tmpGeom):
@@ -308,30 +365,19 @@ class Touch(Intersection):
     group = 'Vector overlay tools'
     
     def processAlgorithm(self, progress):
-        vlayerA = dataobjects.getObjectFromUri(
-                self.getParameterValue(self.INPUT))
-        vlayerB = dataobjects.getObjectFromUri(
-                self.getParameterValue(self.INPUT2))
-        fieldsLayerA = self.getParameterValue(self.FIELDSINPUT1)
-        fieldsLayerB = self.getParameterValue(self.FIELDSINPUT2)
-        self.expressionLayerA = self.getParameterValue(self.EXPRESSIONSINPUT1)
-        self.expressionLayerB = self.getParameterValue(self.EXPRESSIONSINPUT2)
         
-        self.vproviderA = vlayerA.dataProvider()
-        self.fields, self.mapBFields = combineVectorFieldsQgisFields(fieldsLayerA, fieldsLayerB)
-        self.writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(self.fields.toList(),
-                self.vproviderA.geometryType(), self.vproviderA.crs())
-        
+        self.initAlgorithm(progress)
         self.setExpressionObj()
         
         nElement = 0
-        selectionA = vector.features(vlayerA)
-        selectionB = vector.features(vlayerB)
+        selectionA = vector.features(self.vlayerA)
+        
         nFeat = len(selectionA)
         for self.inFeatA in selectionA:
             nElement += 1
             progress.setPercentage(nElement / float(nFeat) * 100)
             geom = QgsGeometry(self.inFeatA.geometry())
+            selectionB = vector.features(self.vlayerB)
             for self.inFeatB in selectionB:
                 geomTarget = QgsGeometry(self.inFeatB.geometry())
                 try:
@@ -352,31 +398,18 @@ class Contain(Touch):
     group = 'Vector overlay tools'
     
     def processAlgorithm(self, progress):
-        vlayerA = dataobjects.getObjectFromUri(
-                self.getParameterValue(self.INPUT))
-        vlayerB = dataobjects.getObjectFromUri(
-                self.getParameterValue(self.INPUT2))
-        fieldsLayerA = self.getParameterValue(self.FIELDSINPUT1)
-        fieldsLayerB = self.getParameterValue(self.FIELDSINPUT2)
-        self.expressionLayerA = self.getParameterValue(self.EXPRESSIONSINPUT1)
-        self.expressionLayerB = self.getParameterValue(self.EXPRESSIONSINPUT2)
-        self.vproviderA = vlayerA.dataProvider()
-
-        self.vproviderA = vlayerA.dataProvider()
-        self.fields, self.mapBFields = combineVectorFieldsQgisFields(fieldsLayerA, fieldsLayerB)
-        self.writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(self.fields.toList(),
-                self.vproviderA.geometryType(), self.vproviderA.crs())
         
+        self.initAlgorithm(progress)
         self.setExpressionObj()
       
         nElement = 0
-        selectionA = vector.features(vlayerA)
-        selectionB = vector.features(vlayerB)
+        selectionA = vector.features(self.vlayerA)
         nFeat = len(selectionA)
         for self.inFeatA in selectionA:
             nElement += 1
             progress.setPercentage(nElement / float(nFeat) * 100)
             geom = QgsGeometry(self.inFeatA.geometry())
+            selectionB = vector.features(self.vlayerB)
             for self.inFeatB in selectionB:
                 geomTarget = QgsGeometry(self.inFeatB.geometry())
                 try:

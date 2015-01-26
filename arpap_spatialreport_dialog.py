@@ -50,6 +50,7 @@ import resources_rc
 from arpap_spatialreport_fieldcalculator_dialog import ARPAP_SpatialReportFieldCalculatorDialog
 from arpap_spatialreport_dialog_chart import ARPAP_SpatialReportDialogChart
 from arpap_geoprocessing import TYPE_NAMES, TYPES
+from psql.arpap_psql import arpap_spatialreport_psql
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -65,8 +66,10 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     algorithm = None
     reslayer = list()
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None,iface=None):
         super(ARPAP_SpatialReportDialog, self).__init__(parent)
+        self.iface = iface
+        self.PSQL = arpap_spatialreport_psql(self.iface)
         self.setupUi(self)
         self.manageGui()
         
@@ -100,6 +103,8 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         QObject.connect(self.outputShapeFileButton, SIGNAL('clicked()'),self.openOutputShapeFileDialog)
         QObject.connect(self.outputSpatialiteButton, SIGNAL('clicked()'),self.openOutputSpatialiteDialog)
         self.populateCombosOutputType()
+        self.populateCombosDbConnection()
+        QObject.connect(self.dbConnectionSelect, SIGNAL('currentIndexChanged(int)'),self.populateDbSchema)
         QObject.connect(self.selectOutputType, SIGNAL('currentIndexChanged(int)'),self.showOutputForm)
         QObject.connect(self.openChartDialogButton, SIGNAL('clicked()'),self.openChartDialog)
         
@@ -149,6 +154,18 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     def populateCombosOutputType(self):
         for type in self.outputItemsSelect:
             self.selectOutputType.addItem(type)
+            
+    def populateCombosDbConnection(self):
+        conn = self.PSQL.getConnections()
+        for c in conn:
+            self.dbConnectionSelect.addItem(c)
+        self.populateDbSchema()
+        
+    def populateDbSchema(self):
+        self.PSQL.setConnection(self.dbConnectionSelect.currentText())
+        schemas = self.PSQL.getSchemas()
+        for s in schemas:
+            self.dbSchemaSelect.addItem(s)
             
     def showOutputForm(self,index):
         self.stackedWidgetOutput.setCurrentIndex(index)
@@ -256,6 +273,10 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         combobox = getattr(self, nameCombobox)
         return combobox.itemData(combobox.currentIndex())
     
+    def getComboboxText(self,nameCombobox):
+        combobox = getattr(self, nameCombobox)
+        return combobox.itemText(combobox.currentIndex())
+    
     def setPercentage(self,i):
         if self.progressBar.maximum() == 0:
             self.progressBar.setMaximum(100)
@@ -289,8 +310,17 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
                         'selectOutputType':self.getOutputType(),
                         'outputShapeFile':self.outputShapeFile.text(),
                         'outputSpatialite':self.outputSpatialite.text(),
+                        'outputPostgis':self.getPostgisOutputValues()
                         }
         return toRet
+    
+    def getPostgisOutputValues(self):
+        return {
+                 'connection':self.getComboboxText('dbConnectionSelect'),
+                 'schema':self.getComboboxText('dbSchemaSelect'),
+                 'table': self.tableName.text(),
+                 'geoColumn':self.geoColumnName.text(),
+                 }
         
     def createRuntimeStepLog(self):
         #take current inputs values
@@ -314,6 +344,11 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             self.addRuntimeStepLog("<span>Shape File Path: <b>%s</b> </span>" % (currentInputValues['step3']['outputShapeFile']))
         elif self.getOutputType() == 'Spatialite':
             self.addRuntimeStepLog("<span>SQlite/Spatialite Path: <b>%s</b> </span>" % (currentInputValues['step3']['outputSpatialite']))
+        else:
+            self.addRuntimeStepLog("<span>Connection: <b>%s</b> </span>" % (currentInputValues['step3']['outputPostgis']['connection']))
+            self.addRuntimeStepLog("<span>Schema: <b>%s</b> </span>" % (currentInputValues['step3']['outputPostgis']['schema']))
+            self.addRuntimeStepLog("<span>Table: <b>%s</b> </span>" % (currentInputValues['step3']['outputPostgis']['table']))
+            self.addRuntimeStepLog("<span>Geo column: <b>%s</b> </span>" % (currentInputValues['step3']['outputPostgis']['geoColumn']))
         
         
     

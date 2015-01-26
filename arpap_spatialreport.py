@@ -68,7 +68,7 @@ class ARPAP_SpatialReport:
                 QCoreApplication.installTranslator(self.translator)
 
         # Create the dialog (after translation) and keep reference
-        self.dlg = ARPAP_SpatialReportDialog()
+        self.dlg = ARPAP_SpatialReportDialog(iface = self.iface)
         
         #QObject.connect(self.dlg.testButton, SIGNAL('pressed()'),self.test)
         QObject.connect(self.dlg.browseConfigFileOutputButton, SIGNAL('clicked()'),self.outConfigFile)
@@ -225,6 +225,8 @@ class ARPAP_SpatialReport:
             outputFile = self.dlg.outputShapeFile.text()
         elif self.dlg.getOutputType() == 'Spatialite':
             outputFile = self.dlg.outputSpatialite.text()
+        else:
+            outputFile = self.dlg.getPostgisOutputValues()
         algorithm.setOutputValue('OUTPUT',outputFile)
         algorithm.execute(self.dlg)
         self.dlg.reslayer = handleAlgorithmResults(algorithm,self.dlg)

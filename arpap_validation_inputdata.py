@@ -81,6 +81,13 @@ class ValidationInputdata():
             if not self.dlg.outputSpatialite.text():
                 toRes = False
                 self.errorMessages.append(self.tr('Output Spatialite file path not to be empty'))
+        else:
+            if not self.dlg.tableName.text():
+                toRes = False
+                self.errorMessages.append(self.tr('Output Postgis Table name not to be empty'))
+            if not self.dlg.geoColumnName.text():
+                toRes = False
+                self.errorMessages.append(self.tr('Output Postgis Geo column name not to be empty'))
         return toRes
     
     def validateChart(self,chartType):
