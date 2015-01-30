@@ -102,9 +102,9 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         QObject.connect(self.backButton, SIGNAL('clicked()'),self.oneBackStep)
         QObject.connect(self.outputShapeFileButton, SIGNAL('clicked()'),self.openOutputShapeFileDialog)
         QObject.connect(self.outputSpatialiteButton, SIGNAL('clicked()'),self.openOutputSpatialiteDialog)
+        QObject.connect(self.dbConnectionSelect, SIGNAL('currentIndexChanged(int)'),self.populateDbSchema)
         self.populateCombosOutputType()
         self.populateCombosDbConnection()
-        QObject.connect(self.dbConnectionSelect, SIGNAL('currentIndexChanged(int)'),self.populateDbSchema)
         QObject.connect(self.selectOutputType, SIGNAL('currentIndexChanged(int)'),self.showOutputForm)
         QObject.connect(self.openChartDialogButton, SIGNAL('clicked()'),self.openChartDialog)
         
@@ -156,14 +156,15 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             self.selectOutputType.addItem(type)
             
     def populateCombosDbConnection(self):
+        self.dbConnectionSelect.clear()
         conn = self.PSQL.getConnections()
         for c in conn:
             self.dbConnectionSelect.addItem(c)
-        self.populateDbSchema()
         
     def populateDbSchema(self):
         self.PSQL.setConnection(self.dbConnectionSelect.currentText())
         schemas = self.PSQL.getSchemas()
+        self.dbSchemaSelect.clear()
         for s in schemas:
             self.dbSchemaSelect.addItem(s)
             
@@ -317,9 +318,12 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     def getPostgisOutputValues(self):
         return {
                  'connection':self.getComboboxText('dbConnectionSelect'),
+                 'PSQL': self.PSQL,
                  'schema':self.getComboboxText('dbSchemaSelect'),
                  'table': self.tableName.text(),
                  'geoColumn':self.geoColumnName.text(),
+                 'overwrite': self.overwriteTableCheckBox.isChecked(),
+                 'spatialIndex': self.spatialIndexCheckbox.isChecked()
                  }
         
     def createRuntimeStepLog(self):

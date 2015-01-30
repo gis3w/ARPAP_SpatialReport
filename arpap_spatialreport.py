@@ -71,8 +71,8 @@ class ARPAP_SpatialReport:
         self.dlg = ARPAP_SpatialReportDialog(iface = self.iface)
         
         #QObject.connect(self.dlg.testButton, SIGNAL('pressed()'),self.test)
-        QObject.connect(self.dlg.browseConfigFileOutputButton, SIGNAL('clicked()'),self.outConfigFile)
-        QObject.connect(self.dlg.browseConfigFileInputButton, SIGNAL('clicked()'),self.inConfigFile)
+        #QObject.connect(self.dlg.browseConfigFileOutputButton, SIGNAL('clicked()'),self.outConfigFile)
+        #QObject.connect(self.dlg.browseConfigFileInputButton, SIGNAL('clicked()'),self.inConfigFile)
         QObject.connect(self.dlg.runButton, SIGNAL('clicked()'),self.runAlgorithm)
 
         # Declare instance attributes
@@ -191,7 +191,7 @@ class ARPAP_SpatialReport:
             self.iface.removeToolBarIcon(action)
 
        
-    
+    '''
     def outConfigFile( self ):
         self.dlg.configFileOutput.clear()
         ( self.jsonFileOutputConfigFile, self.encoding ) = self.saveDialog(self.dlg)
@@ -205,6 +205,7 @@ class ARPAP_SpatialReport:
         if self.jsonFileInputConfigFile is None or self.encoding is None:
           return
         self.dlg.configFileInput.setText( self.jsonFileInputConfigFile )
+    '''
     
     def runAlgorithm(self):
         '''

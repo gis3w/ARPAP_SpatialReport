@@ -658,6 +658,19 @@
                    <item>
                     <layout class="QHBoxLayout" name="horizontalLayout_8">
                      <item>
+                      <widget class="QCheckBox" name="overwriteTableCheckBox">
+                       <property name="font">
+                        <font>
+                         <weight>75</weight>
+                         <bold>true</bold>
+                        </font>
+                       </property>
+                       <property name="text">
+                        <string>Overwrite existing table</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
                       <widget class="QCheckBox" name="spatialIndexCheckbox">
                        <property name="font">
                         <font>
@@ -736,47 +749,6 @@
            </item>
           </layout>
          </widget>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="tabSaveLoad">
-      <attribute name="title">
-       <string>Save/Load</string>
-      </attribute>
-      <layout class="QGridLayout" name="gridLayout_5">
-       <item row="0" column="0">
-        <widget class="QLabel" name="labelConfigInoutFile">
-         <property name="text">
-          <string>ConfigFile Load</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="configFileInput"/>
-       </item>
-       <item row="0" column="2">
-        <widget class="QPushButton" name="browseConfigFileInputButton">
-         <property name="text">
-          <string>Browse</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="labelConfigOutputFile">
-         <property name="text">
-          <string>ConfigFile Save</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="configFileOutput"/>
-       </item>
-       <item row="1" column="2">
-        <widget class="QPushButton" name="browseConfigFileOutputButton">
-         <property name="text">
-          <string>Browse</string>
-         </property>
         </widget>
        </item>
       </layout>

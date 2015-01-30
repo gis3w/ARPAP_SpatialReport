@@ -35,6 +35,8 @@ from processing.core.parameters import ParameterVector, Parameter
 from processing.core.outputs import OutputVector
 from processing.core.ProcessingLog import ProcessingLog
 from processing.core.ProcessingConfig import ProcessingConfig
+from processing.core.GeoAlgorithmExecutionException import \
+        GeoAlgorithmExecutionException
 from processing.tools import dataobjects, vector
 from processing.tools.vector import _toQgsField
 from psql.arpap_psql import arpap_spatialreport_psql
@@ -75,7 +77,7 @@ class SpatialiteWriter(vector.VectorWriter):
 
         self.writer = QgsVectorFileWriter(self.fileName, encoding,
             qgsfields, geometryType, crs, OGRCodes[extension],["SPATIALITE=YES",])
-
+'''
 class PostgisWriter(vector.VectorWriter):
 
     def __init__(self, dbData, encoding, fields, geometryType,
@@ -84,28 +86,118 @@ class PostgisWriter(vector.VectorWriter):
         self.isMemory = False
         self.memLayer = None
         self.writer = None
+        self.crs = crs
         
         class PGWriter():
             
-            def __init__(self,dbData,fields,geometryType,crs):
+            fromWKBType = {
+                           QGis.WKBPoint : "Point",
+                           QGis.WKBLineString: "LineString",
+                           QGis.WKBPolygon: "Polygon", 
+                           QGis.WKBMultiPoint: "MultiPoint", 
+                           QGis.WKBMultiLineString: "MultiLineString",
+                           QGis.WKBMultiPolygon: "MultiPolygon"
+                           }
+            
+            lmemory = None
+            dp = None
+            dbData = None
+            
+            def __init__(self,dbData,fields,geometryType,crs,encoding):
                 self.dbData = dbData
-                self.fields = fields
-                self.geometryType = geometryType
-                self.crs = crs
-                self.PSQL = arpap_spatialreport_psql(iface)
-                self.PSQL.setConnection(self.dbData['connection'])
-                self.PSQL.createTable(self.dbData['table'], ['field1','field2'], True, schema='ublic')
+                uri = self.fromWKBType[geometryType]+'?crs='+str(crs.authid()).lower()
+                #del self.lmemory
+                self.lmemory = QgsVectorLayer(uri,'postgis_temporary','memory')
+                self.lmemory.setProviderEncoding(encoding)
+                self.dp = self.lmemory.dataProvider()
+                self.dp.addAttributes(fields)
                 
-                
-                
-                #create tabel in db
-                
-            
-            
+            def addFeature(self,f):
+                self.dp.addFeatures([f])
+                #self.lmemory.addFeature(f)
+                self.lmemory.updateExtents()
 
+        self.writer = PGWriter(self.dbData,fields, geometryType, crs,encoding)
+        
+    def importDB(self):
+        #instance URI
+        outUri = QgsDataSourceURI()
+        psql = self.dbData['PSQL']
+        outUri.setConnection(psql.PSQLHost, psql.PSQLPort, psql.PSQLDatabase, psql.PSQLUsername, psql.PSQLPassword)
+        outUri.setDataSource(self.dbData['schema'],self.dbData['table'],self.dbData['geoColumn'])
+        uri = outUri.uri()
+        
+        options = {}
+        if self.dbData['overwrite']:
+            options['overwrite'] = True
+        
+               
+        ret, errMsg = QgsVectorLayerImport.importLayer( self.writer.lmemory, uri, "postgres", self.crs, False, False)
+        if errMsg:
+            raise GeoAlgorithmExecutionException(str(errMsg))
+        
+        #if self.dbData['spatialIndex']:
+            #psql.createSpatialIndex( (self.dbData['schema'], self.dbData['table']), self.dbData['geoColumn'] )
+'''
+        
+                    
+class PostgisWriter(vector.VectorWriter):
 
-        self.writer = PGWriter(self.dbData,fields, geometryType, crs)
+    def __init__(self, dbData, encoding, fields, geometryType,
+                 crs, options=None):
+        
+        self.dbData = dbData
+        self.isMemory = False
+        self.memLayer = None
+        self.writer = None
+        self.fileName = 'tempImportDB'
+        self.crs = crs
+        self.uri = None
 
+        if encoding is None:
+            settings = QSettings()
+            encoding = settings.value('/Processing/encoding', 'System', type=str)
+
+        formats = QgsVectorFileWriter.supportedFiltersAndFormats()
+        OGRCodes = {}
+        for (key, value) in formats.items():
+            extension = unicode(key)
+            extension = extension[extension.find('*.') + 2:]
+            extension = extension[:extension.find(' ')]
+            OGRCodes[extension] = value
+
+        extension = 'shp'
+        self.fileName = ProcessingConfig.getSetting(ProcessingConfig.OUTPUT_FOLDER)+'/'+ self.fileName + '.'+extension
+    
+
+        qgsfields = QgsFields()
+        for field in fields:
+            qgsfields.append(_toQgsField(field))
+
+        self.writer = QgsVectorFileWriter(self.fileName, encoding,
+            qgsfields, geometryType, crs, OGRCodes['shp'])
+        
+        
+    def importDB(self):
+        #instance URI
+        outUri = QgsDataSourceURI()
+        psql = self.dbData['PSQL']
+        outUri.setConnection(psql.PSQLHost, psql.PSQLPort, psql.PSQLDatabase, psql.PSQLUsername, psql.PSQLPassword)
+        outUri.setDataSource(self.dbData['schema'],self.dbData['table'],self.dbData['geoColumn'])
+        uri = outUri.uri()
+        
+        options = {}
+        if self.dbData['overwrite']:
+            options['overwrite'] = True
+        del self.writer
+        vlayer = QgsVectorLayer(self.fileName, "layer_name_you_like", "ogr")       
+        ret, errMsg = QgsVectorLayerImport.importLayer(vlayer, uri, "postgres", self.crs, False, False,options)
+        if errMsg:
+            raise GeoAlgorithmExecutionException(str(errMsg))
+
+        if self.dbData['spatialIndex']:
+            psql.createSpatialIndex( (self.dbData['schema'], self.dbData['table']), self.dbData['geoColumn'] )
+        
 
 class OutputSpatialite(OutputVector):
     def getVectorWriter(self, fields, geomType, crs, options=None):
@@ -306,6 +398,16 @@ class Intersection(ProcessingIntersection):
         
         self.writer.addFeature(self.outFeat)
     
+    def sendToDB(self):
+        self.writer.importDB()
+        
+    def finalizeAlgorithm(self):
+        #for postgis output
+        if self.outputType == 'Postgis':
+            self.sendToDB()
+        else:
+            del self.writer
+    
     def processAlgorithm(self, progress):
         
         self.initAlgorithm(progress)
@@ -335,16 +437,15 @@ class Intersection(ProcessingIntersection):
                         try:
                             if int_geom.wkbType() in wkbTypeGroups[wkbTypeGroups[int_geom.wkbType()]]:
                                 self.setOutFeat(int_geom)
-                                
                         except Exception as e:
-                            print e
                             ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Feature geometry error: One or more output features ignored due to invalid geometry.')
                             continue
                 except:
                     break
-
-
-        del self.writer
+                
+        #finalize
+        self.finalizeAlgorithm()
+        
     
     def defineCharacteristics(self):
         self.addParameter(ParameterVector(self.INPUT, 'Origin layer',
@@ -389,7 +490,8 @@ class Touch(Intersection):
                             continue
                 except:
                     break
-        del self.writer
+        #finalize
+        self.finalizeAlgorithm()
 
 
 class Contain(Touch):
@@ -421,7 +523,8 @@ class Contain(Touch):
                             continue
                 except:
                     break
-        del self.writer
+        #finalize
+        self.finalizeAlgorithm()
     
 
 
@@ -435,21 +538,30 @@ def handleAlgorithmResults(alg, progress=None, showResults=True):
     i = 0
     for out in alg.outputs:
         progress.setPercentage(100 * i / float(len(alg.outputs)))
-        if out.hidden or not out.open:
-            continue
+        #if out.hidden or not out.open:
+            #continue
         if isinstance(out, (OutputVector)):
             try:
-                if ProcessingConfig.getSetting(
-                        ProcessingConfig.USE_FILENAME_AS_LAYER_NAME):
-                    name = os.path.basename(out.value)
-                    name = name.split('.')[0]
-                else:
-                    name = out.description
-                    # removing .ext from name if exixst
-                layer = dataobjects.load(out.value, name, alg.crs,
-                        RenderingStyles.getStyle(alg.commandLineName(),
-                        out.name))
+                if alg.outputType == 'Postgis':
+                    outUri = QgsDataSourceURI()
+                    psql = out.value['PSQL']
+                    outUri.setConnection(psql.PSQLHost, psql.PSQLPort, psql.PSQLDatabase, psql.PSQLUsername, psql.PSQLPassword)
+                    outUri.setDataSource(out.value['schema'],out.value['table'],out.value['geoColumn'])
+                    layer = QgsVectorLayer(outUri.uri(), out.value['table'], "postgres")
+                    QgsMapLayerRegistry.instance().addMapLayers([layer])
                     
+                else:
+                    if ProcessingConfig.getSetting(
+                            ProcessingConfig.USE_FILENAME_AS_LAYER_NAME):
+                        name = os.path.basename(out.value)
+                        name = name.split('.')[0]
+                    else:
+                        name = out.description
+                        # removing .ext from name if exixst
+                    layer = dataobjects.load(out.value, name, alg.crs,
+                            RenderingStyles.getStyle(alg.commandLineName(),
+                            out.name))
+                        
                 reslayers.append(layer)
             except Exception, e:
                 wrongLayers.append(out)
