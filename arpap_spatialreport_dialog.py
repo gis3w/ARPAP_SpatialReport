@@ -21,7 +21,6 @@
  ***************************************************************************/
 """
 from ARPAP_SpatialReport import arpap_geoprocessing
-from PySide.QtCore import QModelIndex
 
 
 __author__ = 'Walter Lorenzetti'
