@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>763</width>
+    <width>1018</width>
     <height>560</height>
    </rect>
   </property>
@@ -551,7 +551,7 @@
                <item>
                 <widget class="QStackedWidget" name="stackedWidgetOutput">
                  <property name="currentIndex">
-                  <number>2</number>
+                  <number>0</number>
                  </property>
                  <widget class="QWidget" name="pageOutputShapeFile">
                   <layout class="QHBoxLayout" name="horizontalLayout_5">

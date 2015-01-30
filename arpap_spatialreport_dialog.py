@@ -64,6 +64,7 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     headersFieldsTable = ['Field name','Data type','Length','Precision','Actions']
     algorithm = None
     reslayer = list()
+    removeButtons = dict()
     
     def __init__(self, parent=None,iface=None):
         super(ARPAP_SpatialReportDialog, self).__init__(parent)
@@ -403,14 +404,20 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
                 itemLength = QtGui.QStandardItem(str(data['length']))
                 itemPrecision = QtGui.QStandardItem(str(data['precision']))
                 itemExpression = QtGui.QStandardItem(data['expression'])
-                #actions = QtGui.QStandardItem('actions')
+                actions = QtGui.QStandardItem('actions')
                 model = tableView.model()
-                model.appendRow([itemName,itemType,itemLength,itemPrecision,itemExpression])
-                #removeButton = QtGui.QPushButton(self.tr('Remove'),clicked=self.removeTableFieldsRow)
-                #tableView.setIndexWidget(actions.index(),removeButton)
+                model.appendRow([itemName,itemType,itemLength,itemPrecision,itemExpression,actions])
+                removeButton = QtGui.QPushButton(self.tr('Remove'),clicked=self.removeTableFieldsRow)
+                tableView.setIndexWidget(actions.index(),removeButton)
+                print actions.index()
+                self.removeButtons[id(removeButton)] = actions.index()
+                
     
     def removeTableFieldsRow(self):
-        print self.sender().parent()
+        index = self.removeButtons[id(self.sender())]
+        model = self.sender().parent().parent().model()
+        model.removeRow(index.row())
+        
             
     def openOutputShapeFileDialog(self):
         self.outputShapeFile.clear()
