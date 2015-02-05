@@ -107,7 +107,81 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
             self.modelCategory.appendRow(itemCategory)
             self.modelValue.appendRow(itemValue)
         
+    def getCSS(self):
+        return '''
+        <link href="nvd3/nv.d3.css" rel="stylesheet" type="text/css">
+        '''
+    def getJsScript(self):
+        return '''
+            <script src="nvd3/lib/d3.v3.js"></script>
+            <script type="text/javascript" src="nvd3/nv.d3.js"></script>
+            <script src="nvd3/src/tooltip.js"></script>
+            <script src="nvd3/src/utils.js"></script>
+            <script src="nvd3/src/models/axis.js"></script>
+            <script src="nvd3/src/models/discreteBar.js"></script>
+            <script src="nvd3/src/models/discreteBarChart.js"></script>
+        '''
 
+    def getChart(self):
+        return '''
+        <script>
+  historicalBarChart = [
+  {
+    key: "Cumulative Return",
+    values: [
+      {
+        "label" : "A" ,
+        "value" : 29.765957771107
+      } ,
+      {
+        "label" : "B" ,
+        "value" : 0
+      } ,
+      {
+        "label" : "C" ,
+        "value" : 32.807804682612
+      } ,
+      {
+        "label" : "D" ,
+        "value" : 196.45946739256
+      } ,
+      {
+        "label" : "E" ,
+        "value" : 0.19434030906893
+      } ,
+      {
+        "label" : "F" ,
+        "value" : 98.079782601442
+      } ,
+      {
+        "label" : "G" ,
+        "value" : 13.925743130903
+      } ,
+      {
+        "label" : "H" ,
+        "value" : 5.1387322875705
+      }
+    ]
+  }
+];
+nv.addGraph(function() {
+  var chart = nv.models.discreteBarChart()
+      .x(function(d) { return d.label })
+      .y(function(d) { return d.value })
+      .staggerLabels(true)
+      //.staggerLabels(historicalBarChart[0].values.length > 8)
+      .tooltips(false)
+      .showValues(true)
+      .transitionDuration(250)
+      ;
+  d3.select('#chart1 svg')
+      .datum(historicalBarChart)
+      .call(chart);
+  nv.utils.windowResize(chart.update);
+  return chart;
+});
+</script>
+        '''
 
     def generateChart(self):
         scene = QtGui.QGraphicsScene()
@@ -122,10 +196,18 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
             self.webview = QGraphicsWebView()
             self.webview.resize(self.graphicsView.width()-20,self.graphicsView.height()-20)
             path = os.path.dirname(__file__)+'/js/'
-            html = '''
-            <script type="text/javascript" src="svg.jquery.js"></script>
-            <script type="text/javascript" src="pygal-tooltips.js"></script>
-            '''+chart.render()
+            
+            html = self.getCSS()
+            html += '''
+             <div id="chart1">
+                <svg></svg>
+              </div>
+
+            '''
+            html += self.getJsScript()
+            html += self.getChart()
+            
+            
             
             self.webview.setHtml(html,baseUrl=QUrl().fromLocalFile(path))
             self.webview.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
