@@ -15,7 +15,6 @@
 *                                                                         *
 ***************************************************************************
 """
-
 __author__ = 'Walter Lorenzetti'
 __date__ = 'December 2014'
 __copyright__ = '(C) 2014, Walter Lorenzetti Gis3w'
@@ -52,6 +51,7 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
     modelCategory = None
     modelValue = None
     validation = None
+    chartGenerated = False
     
     def __init__(self, parent=None):
         super(ARPAP_SpatialReportDialogChart, self).__init__(parent)
@@ -61,6 +61,8 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
         self.validation = ValidationInputdata(self,self.tr)
         self.setupUi(self)
         self.manageGui()
+    
+    
         
         
     def manageGui(self):
@@ -74,6 +76,11 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
         QObject.connect(self.saveCSVFile, SIGNAL('clicked()'),self.saveCSV)
         self.populateChartTypesCombo()
         self.populateCombosField()
+        #manage resizeEvent QWebview
+        def onResizeWebview(e):
+            if self.chartGenerated:
+                self.generateChart()
+        self.graphicsView.resizeEvent = onResizeWebview 
         
     def populateChartTypesCombo(self):
         self.chartTypes = {
@@ -218,6 +225,7 @@ nv.addGraph(function() {
             scene.addItem(self.webview)
             self.graphicsView.show()
             self.savePngFile.setEnabled(True)
+            self.chartGenerated = True
         else:
             self.showValidateErrors()
         
