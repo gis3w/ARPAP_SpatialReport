@@ -30,11 +30,11 @@ from PyQt4.QtWebKit import QGraphicsWebView
 from PyQt4.QtCore import QObject,SIGNAL, Qt, QVariant, QUrl, QSize
 from qgis.core import *
 from qgis.gui import *
-import pygal
 from pygal import style
 from arpap_validation_inputdata import ValidationInputdata
 import numpy
 import csv
+from chart import bar,pie
 
 
 
@@ -52,6 +52,7 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
     modelValue = None
     validation = None
     chartGenerated = False
+    mapChartType = {'bar':bar,'pie':pie}
     
     def __init__(self, parent=None):
         super(ARPAP_SpatialReportDialogChart, self).__init__(parent)
@@ -114,81 +115,6 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
             self.modelCategory.appendRow(itemCategory)
             self.modelValue.appendRow(itemValue)
         
-    def getCSS(self):
-        return '''
-        <link href="nvd3/nv.d3.css" rel="stylesheet" type="text/css">
-        '''
-    def getJsScript(self):
-        return '''
-            <script src="nvd3/lib/d3.v3.js"></script>
-            <script type="text/javascript" src="nvd3/nv.d3.js"></script>
-            <script src="nvd3/src/tooltip.js"></script>
-            <script src="nvd3/src/utils.js"></script>
-            <script src="nvd3/src/models/axis.js"></script>
-            <script src="nvd3/src/models/discreteBar.js"></script>
-            <script src="nvd3/src/models/discreteBarChart.js"></script>
-        '''
-
-    def getChart(self):
-        return '''
-        <script>
-  historicalBarChart = [
-  {
-    key: "Cumulative Return",
-    values: [
-      {
-        "label" : "A" ,
-        "value" : 29.765957771107
-      } ,
-      {
-        "label" : "B" ,
-        "value" : 0
-      } ,
-      {
-        "label" : "C" ,
-        "value" : 32.807804682612
-      } ,
-      {
-        "label" : "D" ,
-        "value" : 196.45946739256
-      } ,
-      {
-        "label" : "E" ,
-        "value" : 0.19434030906893
-      } ,
-      {
-        "label" : "F" ,
-        "value" : 98.079782601442
-      } ,
-      {
-        "label" : "G" ,
-        "value" : 13.925743130903
-      } ,
-      {
-        "label" : "H" ,
-        "value" : 5.1387322875705
-      }
-    ]
-  }
-];
-nv.addGraph(function() {
-  var chart = nv.models.discreteBarChart()
-      .x(function(d) { return d.label })
-      .y(function(d) { return d.value })
-      .staggerLabels(true)
-      //.staggerLabels(historicalBarChart[0].values.length > 8)
-      .tooltips(false)
-      .showValues(true)
-      .transitionDuration(250)
-      ;
-  d3.select('#chart1 svg')
-      .datum(historicalBarChart)
-      .call(chart);
-  nv.utils.windowResize(chart.update);
-  return chart;
-});
-</script>
-        '''
 
     def generateChart(self):
         scene = QtGui.QGraphicsScene()
@@ -197,26 +123,15 @@ nv.addGraph(function() {
         #select data adn chart type
         chartType = self.getChartType()
         if self.validation.validateChart(chartType):
-            chart = getattr(self, chartType+'ChartGenerator')()
+            chart = self.mapChartType[chartType]()
             
              
             self.webview = QGraphicsWebView()
             self.webview.resize(self.graphicsView.width()-20,self.graphicsView.height()-20)
             path = os.path.dirname(__file__)+'/js/'
-            
-            html = self.getCSS()
-            html += '''
-             <div id="chart1">
-                <svg></svg>
-              </div>
-
-            '''
-            html += self.getJsScript()
-            html += self.getChart()
-            
-            
-            
-            self.webview.setHtml(html,baseUrl=QUrl().fromLocalFile(path))
+            chartData = getattr(self,chartType + 'ChartData' )()
+            chart.setData(chartData)
+            self.webview.setHtml(chart.getHTML(),baseUrl=QUrl().fromLocalFile(path))
             self.webview.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
             self.webview.setCacheMode(QtGui.QGraphicsItem.NoCache)
             frame = self.webview.page().mainFrame()
@@ -229,7 +144,7 @@ nv.addGraph(function() {
         else:
             self.showValidateErrors()
         
-    def barChartGenerator(self):
+    def barChartData(self):
         categoryItem = self.getSelectedListViewItem('category')
         layer = self.reslayer[0]
         features = layer.getFeatures()
@@ -240,14 +155,10 @@ nv.addGraph(function() {
                 occourences[value] = 0
             occourences[value] += 1 
             
-        
-        chart = pygal.Bar(fill=True, show_legend=False, style=style.BlueStyle)
-        chart.x_labels = map(str, occourences.keys())
-        chart.add(categoryItem.text(), occourences.values())
-        
-        return chart
+        chartData = {'values':[{'label':k,'value':occourences[k]} for k in occourences.keys()]}    
+        return [chartData]
     
-    def pieChartGenerator(self):
+    def pieChartData(self):
         categoryItem = self.getSelectedListViewItem('category')
         valueItem = self.getSelectedListViewItem('value')
         layer = self.reslayer[0]
@@ -266,13 +177,8 @@ nv.addGraph(function() {
             occourences[key] += value
             totValue += value
             
-        
-        chart = pygal.Pie(fill=True,label_font_size=4, style=style.BlueStyle)
-        print occourences
-        for key in occourences:
-            chart.add(key, float(float(occourences[key])/float(totValue)))
-        
-        return chart
+        chartData = [{'key':k,'y':float(float(occourences[k])/float(totValue))} for k in occourences.keys()] 
+        return chartData
     
     def generateStatistics(self):
         categoryItem = self.getSelectedListViewItem('category')
