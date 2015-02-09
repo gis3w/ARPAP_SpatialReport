@@ -30,7 +30,6 @@ from PyQt4.QtWebKit import QGraphicsWebView
 from PyQt4.QtCore import QObject,SIGNAL, Qt, QVariant, QUrl, QSize
 from qgis.core import *
 from qgis.gui import *
-from pygal import style
 from arpap_validation_inputdata import ValidationInputdata
 import numpy
 import csv
