@@ -22,7 +22,8 @@
 """
 import sys
 import os.path
-sys.path.append(os.path.dirname(__file__)+'/libs/')
+if not os.path.dirname(__file__)+'/libs/' in sys.path:
+    sys.path.append(os.path.dirname(__file__)+'/libs/')
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QObject, SIGNAL
 from PyQt4.QtGui import QAction, QIcon
 from qgis.core import *

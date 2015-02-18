@@ -50,6 +50,8 @@ from arpap_spatialreport_fieldcalculator_dialog import ARPAP_SpatialReportFieldC
 from arpap_spatialreport_dialog_chart import ARPAP_SpatialReportDialogChart
 from arpap_geoprocessing import TYPE_NAMES, TYPES
 from psql.arpap_psql import arpap_spatialreport_psql
+from .core.project import SpatialreportProject
+import json
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -69,9 +71,11 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     def __init__(self, parent=None,iface=None):
         super(ARPAP_SpatialReportDialog, self).__init__(parent)
         self.iface = iface
+        self.project = SpatialreportProject(self.iface)
         self.PSQL = arpap_spatialreport_psql(self.iface)
         self.setupUi(self)
         self.manageGui()
+
         
     def manageGui(self):
         """
@@ -115,13 +119,16 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         """
         if (self.getValidationStep(self.stackedWidget.currentIndex()) and incrementValue >= 0) or incrementValue < 0:
             self.stackedWidget.setCurrentIndex(self.stackedWidget.currentIndex() + incrementValue)
-            self.setButtonNavigationStatus()
             if self.stackedWidget.currentIndex() == 1:
                 self.doValidationGeoprocessingDataType()
             elif self.stackedWidget.currentIndex() == 3:
                 self.showOutputForm(self.selectOutputType.currentIndex())
             elif self.stackedWidget.currentIndex() == 4:
                 self.manageReportButton()
+            #set project setp value
+            if self.stackedWidget.currentIndex() < 5:
+                self.project.setStep(self.stackedWidget.currentIndex() - incrementValue,self.getDataStep(self.stackedWidget.currentIndex() - incrementValue))
+            self.setButtonNavigationStatus()
         else:
             self.showValidateErrors()
     
@@ -285,35 +292,34 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         
     def setText(self,text):
         self.labelProgress.setText(text)
-        
-    def getCurrentInputValues(self):
-        toRet = {}
-        #get stpe0 values
-        toRet['step0']={
-                        'title':self.tr('Selection Origin -> Target'),
-                        'originLayerSelect':self.getComboboxData('originLayerSelect'),
-                        'targetLayerSelect':self.getComboboxData('targetLayerSelect'),
-                        }
-        #get stpe1 values
-        toRet['step1']={
-                        'title':self.tr('Selection Geometry operation'),
-                        'geoprocessingTypeData':self.getGeoprocessingTypeData()
-                        }
-        #get stpe2 values
-        toRet['step2']={
-                        'title':self.tr('Selection fields'),
-                        'originLayerFields':self.getSelectedFields('tableViewOriginLayerFields'),
-                        'targetLayerFields':self.getSelectedFields('tableViewTargetLayerFields'),
-                        }
-         #get stpe3 values
-        toRet['step3']={
-                        'title':self.tr('Selection Output'),
-                        'selectOutputType':self.getOutputType(),
-                        'outputShapeFile':self.outputShapeFile.text(),
-                        'outputSpatialite':self.outputSpatialite.text(),
-                        'outputPostgis':self.getPostgisOutputValues()
-                        }
-        return toRet
+
+    def getDataStep(self,stepNumber):
+        data = {
+            '0':{
+                'title':self.tr('Selection Origin -> Target'),
+                'originLayerSelect':self.getComboboxData('originLayerSelect'),
+                'targetLayerSelect':self.getComboboxData('targetLayerSelect'),
+            },
+            '1':{
+                'title':self.tr('Selection Geometry operation'),
+                'geoprocessingTypeData':self.getGeoprocessingTypeData()
+            },
+            '2':{
+                'title':self.tr('Selection fields'),
+                'originLayerFields':self.getSelectedFields('tableViewOriginLayerFields'),
+                'targetLayerFields':self.getSelectedFields('tableViewTargetLayerFields'),
+            },
+            '3':{
+                'title':self.tr('Selection Output'),
+                'selectOutputType':self.getOutputType(),
+                'outputShapeFile':self.outputShapeFile.text(),
+                'outputSpatialite':self.outputSpatialite.text(),
+                'outputPostgis':self.getPostgisOutputValues()
+            }
+        }
+        if str(stepNumber) in data:
+            return data[str(stepNumber)]
+
     
     def getPostgisOutputValues(self):
         return {
@@ -328,7 +334,9 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         
     def createRuntimeStepLog(self):
         #take current inputs values
-        currentInputValues = self.getCurrentInputValues()
+        currentInputValues = self.project.getConfig()
+        self.project.writeConfig()
+        print currentInputValues
         self.runtimeStepBrowser.clear()
         self.addRuntimeStepLog("<h3 style='border-style:dotted; border-color:red;'><u>1) %s:</u></h3>" % currentInputValues['step0']['title'])
         self.addRuntimeStepLog("<span>ORIGIN LAYER: %s (<b>%s</b>)[Provider:%s, Epsg:%s] </span>" % (currentInputValues['step0']['originLayerSelect'].name(),getVectorTypeAsString(currentInputValues['step0']['originLayerSelect']),currentInputValues['step0']['originLayerSelect'].dataProvider().storageType(),str(currentInputValues['step0']['originLayerSelect'].crs().postgisSrid())))
