@@ -61,12 +61,14 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     
     validation = None
-    radioGeoprocessingSelectionButtons = ['Intersect','Touch','Contain']
+    radioGeoprocessingSelectionButtons = ['Intersection','Touch','Contain']
     outputItemsSelect = ['Shape File','Spatialite','Postgis']
     headersFieldsTable = ['Field name','Data type','Length','Precision','Actions']
     algorithm = None
     reslayer = list()
     removeButtons = dict()
+    originalOriginLayerFieldsName = []
+    originalTargetLayerFieldsName = []
     
     def __init__(self, parent=None,iface=None):
         super(ARPAP_SpatialReportDialog, self).__init__(parent)
@@ -98,7 +100,7 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         self.labelDescriptionGeoprocessingTouch.setPixmap(QtGui.QPixmap(':/plugins/ARPAP_SpatialReport/icons/touch.png'))
         self.labelDescriptionGeoprocessingContain.setPixmap(QtGui.QPixmap(':/plugins/ARPAP_SpatialReport/icons/contain.png'))
         self.validation = ValidationInputdata(self,self.tr)
-        QObject.connect(self.geoprocessingIntersectRadio, SIGNAL('released()'),self.doValidationGeoprocessingDataType)
+        QObject.connect(self.geoprocessingIntersectionRadio, SIGNAL('released()'),self.doValidationGeoprocessingDataType)
         QObject.connect(self.geoprocessingTouchRadio, SIGNAL('released()'),self.doValidationGeoprocessingDataType)
         QObject.connect(self.geoprocessingContainRadio, SIGNAL('released()'),self.doValidationGeoprocessingDataType)
         QObject.connect(self.fieldCalculatorOriginButton, SIGNAL('clicked()'),self.openFieldCalculatorOrigin)
@@ -205,15 +207,20 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             
     def populateOriginFieldsLists(self):
         if hasattr(self.getComboboxData('originLayerSelect'),'dataProvider'):
+            fields = self.getComboboxData('originLayerSelect').dataProvider().fields()
+            self.originalOriginLayerFieldsName = [f.name() for f in fields]
             self._populateTableFieldsList('originLayerSelect', self.tableViewOriginLayerFields)
     
     def populateTargetFieldsLists(self):
         if hasattr(self.getComboboxData('targetLayerSelect'),'dataProvider'):
+            fields = self.getComboboxData('targetLayerSelect').dataProvider().fields()
+            self.originalTargetLayerFieldsName = [f.name() for f in fields]
             self._populateTableFieldsList('targetLayerSelect', self.tableViewTargetLayerFields)
         
     def _populateTableFieldsList(self,comboName,tableView):
         headersFieldsTable = ['Field name','Data type','Length','Precision','Expression','Actions']
-        fields = self.getComboboxData(comboName).dataProvider().fields()            
+        fields = self.getComboboxData(comboName).dataProvider().fields()
+
         model = QtGui.QStandardItemModel(tableView)
         for columnName in headersFieldsTable:
             model.setHorizontalHeaderItem(headersFieldsTable.index(columnName),QtGui.QStandardItem(columnName))
@@ -242,6 +249,9 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         return fieldsToRet
     
     def getSelectedFieldsNameWithExpression(self,layer):
+        '''
+        Return a dict of field with expression
+        '''
         tableView = getattr(self,layer)
         model = tableView.model()
         fieldsToRet = dict()
@@ -383,7 +393,27 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         #get data from _config
         self.addProjectFileLog(self.tr('<span style="color:#0000FF;"><b>Loading Step 2 data ...</b></span>'))
         data = self.project.getWriteableConfigStep2
-        #we load only new fields
+        for typeLayer in ['origin','target']:
+            olfName = typeLayer+'LayerFields'
+            table= 'tableView' + typeLayer[0].capitalize()+typeLayer[1:] + 'LayerFields'
+            layerFieldsToCheck = [f['name'] for f in data[olfName] if f['origin'] == 'layer']
+            layerFieldsToCheckExpression = [f['name'] for f in data[olfName] if f['origin'] == 'layer' and 'expression' in f]
+            tableView = getattr(self,table)
+            model = tableView.model()
+            for r in range(model.rowCount()):
+                item = model.item(r,0)
+                if not item.text() in layerFieldsToCheck:
+                    item.setCheckState(Qt.Unchecked)
+                elif item.text() in layerFieldsToCheckExpression:
+                    expression = [f for f in data[olfName] if f['name'] == item.text()][0]['expression']
+                    expressionItem = QtGui.QStandardItem(expression)
+                    model.setItem(r,4,expressionItem)
+            #add expression fields
+            for f in [f for f in data[olfName] if f['origin'] == 'expression']:
+                f['type'] = f['typeName']
+                self.addExpressionField(tableView,f)
+
+
 
     def loadStep3(self):
         #get data from _config
@@ -506,23 +536,26 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
                         'length':fieldCalculatorDialog.mOutputFieldWidthSpinBox.value(),
                         'precision':fieldCalculatorDialog.mOutputFieldPrecisionSpinBox.value(),
                         'expression':fieldCalculatorDialog.builder.expressionText()}
-                itemName = QtGui.QStandardItem(fieldCalculatorDialog.mOutputFieldNameLineEdit.text())
-                itemName.setData(QgsField(data['name'],TYPES[fieldCalculatorDialog.mOutputFieldTypeComboBox.currentIndex()],fieldCalculatorDialog.mOutputFieldTypeComboBox.currentText(),int(data['length']),int(data['precision'])))
-                itemName.setCheckable(True)
-                itemName.setCheckState(Qt.Checked)
-                itemName.setSelectable(False)
-                itemName.setEditable(False)
-                itemType = QtGui.QStandardItem(data['type'])
-                itemLength = QtGui.QStandardItem(str(data['length']))
-                itemPrecision = QtGui.QStandardItem(str(data['precision']))
-                itemExpression = QtGui.QStandardItem(data['expression'])
-                actions = QtGui.QStandardItem('actions')
-                model = tableView.model()
-                model.appendRow([itemName,itemType,itemLength,itemPrecision,itemExpression,actions])
-                removeButton = QtGui.QPushButton(self.tr('Remove'),clicked=self.removeTableFieldsRow)
-                tableView.setIndexWidget(actions.index(),removeButton)
-                self.removeButtons[id(removeButton)] = actions.index()
-                
+                self.addExpressionField(tableView,data)
+
+
+    def addExpressionField(self,tableView,data):
+        itemName = QtGui.QStandardItem(data['name'])
+        itemName.setData(QgsField(data['name'],TYPES[TYPE_NAMES.index(data['type'])],data['type'],int(data['length']),int(data['precision'])))
+        itemName.setCheckable(True)
+        itemName.setCheckState(Qt.Checked)
+        itemName.setSelectable(False)
+        itemName.setEditable(False)
+        itemType = QtGui.QStandardItem(data['type'])
+        itemLength = QtGui.QStandardItem(str(data['length']))
+        itemPrecision = QtGui.QStandardItem(str(data['precision']))
+        itemExpression = QtGui.QStandardItem(data['expression'])
+        actions = QtGui.QStandardItem('actions')
+        model = tableView.model()
+        model.appendRow([itemName,itemType,itemLength,itemPrecision,itemExpression,actions])
+        removeButton = QtGui.QPushButton(self.tr('Remove'),clicked=self.removeTableFieldsRow)
+        tableView.setIndexWidget(actions.index(),removeButton)
+        self.removeButtons[id(removeButton)] = actions.index()
     
     def removeTableFieldsRow(self):
         index = self.removeButtons[id(self.sender())]

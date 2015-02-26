@@ -76,7 +76,7 @@
           <bool>true</bool>
          </property>
          <property name="currentIndex">
-          <number>3</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="pageSelectLayer">
           <layout class="QGridLayout" name="gridLayout_3">
@@ -231,7 +231,7 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QRadioButton" name="geoprocessingIntersectRadio">
+                <widget class="QRadioButton" name="geoprocessingIntersectionRadio">
                  <property name="font">
                   <font>
                    <weight>75</weight>

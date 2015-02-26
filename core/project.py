@@ -67,6 +67,7 @@ class SpatialreportProject(QObject):
                 
 
     def save(self,filepath=None):
+        self.parent.projectFileStatusBrowser.clear()
         self.parent.addProjectFileLog(self.tr('Starting save file ...'))
         if filepath:
             self.setFilePath(filepath)
@@ -132,9 +133,16 @@ class SpatialreportProject(QObject):
     def forSerializeStep2(self):
         self._config[self.ROOTIDENT]['step2'] = self.config[self.ROOTIDENT]['step2'].copy()
         for typeLayer in ('originLayerFields','targetLayerFields'):
+            originaLayerFieldsName = self.parent.originalOriginLayerFieldsName if typeLayer == 'originLayerFields' else self.originalTargetLayerFieldsName
             self._config[self.ROOTIDENT]['step2'][typeLayer] = list()
+            expressionFields = self.parent.getSelectedFieldsNameWithExpression('tableView'+typeLayer[0].capitalize()+typeLayer[1:])
             for f in self.config[self.ROOTIDENT]['step2'][typeLayer].values():
-                self._config[self.ROOTIDENT]['step2'][typeLayer].append({'name':f.name(),'typeName':f.typeName(),'length':f.length(),'precision':f.precision()})
+                #check type of Field
+                origin = 'expression' if f.name() in expressionFields and not f.name() in originaLayerFieldsName else 'layer'
+                data = {'name':f.name(),'typeName':f.typeName(),'length':f.length(),'precision':f.precision(),'origin':origin}
+                if f.name() in expressionFields:
+                    data['expression'] = expressionFields[f.name()]
+                self._config[self.ROOTIDENT]['step2'][typeLayer].append(data)
 
     def forSerializeStep3(self):
         self._config[self.ROOTIDENT]['step3'] = self.config[self.ROOTIDENT]['step3'].copy()
