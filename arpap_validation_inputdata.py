@@ -60,12 +60,20 @@ class ValidationInputdata():
         toRes = True
         if self.dlg.originLayerSelect.currentIndex() == -1:
             toRes = False
-            self.errorMessages.append(self.tr('Origin Leyer not to be empty'))
+            self.errorMessages.append(self.tr('Origin Layer not to be empty'))
             
         if self.dlg.targetLayerSelect.currentIndex() == -1:
             toRes = False
-            self.errorMessages.append(self.tr('Target Leyer not to be empty'))
-        
+            self.errorMessages.append(self.tr('Target Layer not to be empty'))
+
+        #check SR between layers:
+        if toRes:
+            originSR = self.dlg.getComboboxData('originLayerSelect').crs().postgisSrid()
+            targetSR = self.dlg.getComboboxData('targetLayerSelect').crs().postgisSrid()
+            if originSR != targetSR:
+                toRes = False
+                self.errorMessages.append(self.tr('Origin and Target Layer have different SR'))
+
         return toRes
     
     #def validateStep1(self):

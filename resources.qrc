@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/plugins/ARPAP_SpatialReport" >
+    <qresource prefix="/plugins/ARPAP_SpatialReport">
         <file>icons/icon.png</file>
         <file>icons/mActionCalculateField.png</file>
         <file>icons/forward.png</file>
@@ -16,5 +16,11 @@
         <file>icons/intersection.png</file>
         <file>icons/contain.png</file>
         <file>icons/touch.png</file>
+        <file>icons/mActionFileOpen.svg</file>
+        <file>icons/mActionFileSave.svg</file>
+        <file>icons/upload.svg</file>
+        <file>icons/credits.svg</file>
+        <file>icons/io.svg</file>
+        <file>icons/run.svg</file>
     </qresource>
 </RCC>

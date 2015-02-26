@@ -34,19 +34,22 @@ class SpatialreportProject(QObject):
 
     config = dict()
     _config = dict()
+    full = False
+    loadingError = False
+
+
     projectChanged = pyqtSignal(object)
     projectSaved = pyqtSignal()
+    projectFull = pyqtSignal()
     
-    def __init__(self,compIface,filepath=None):
+    def __init__(self,compIface,parent = None,filepath=None):
         super(SpatialreportProject,self).__init__()
         self.projectName = None
         self.filepath = None
-        self.errors = {
-           "missginItems":[]
-        }
         if filepath:
             self.setFilePath(filepath)
         self.compIface = compIface
+        self.parent = parent
         self.dirty = False
     
     def open(self,filepath=None,composition=None):
@@ -56,36 +59,25 @@ class SpatialreportProject(QObject):
             raise Exception(self.tr("File %s does not exists" % self.filepath))
         with open(self.filepath,"r") as configFile:
             try:
-                self.config = self.readConfig(configFile.read())
-                # composition parameter is set in case the user overlads the composition set inside the project file
-                # otherwise use the project file's composition
-                if not composition:
-                    composition = self.compIface.getCompositionFromTitle(self.config["composition"])
-                self.setupItemsFromConfig(composition)
+                self._config = self.readConfig(configFile.read())
+                self.loadConfigData()
             except ReportProjectParseException,e:
                 raise e
-            else:
-                self.setComposition(composition,self.config["composition"])
-                self.save()
+
                 
 
     def save(self,filepath=None):
+        self.parent.addProjectFileLog(self.tr('Starting save file ...'))
         if filepath:
             self.setFilePath(filepath)
-        self.config = {}
         self.writeConfig()
-        data = unicode(json.dumps(self.config))
+        data = unicode(json.dumps(self._config,indent=4))
         
         with open(self.filepath,"w") as outfile:
             outfile.write(data.encode("utf-8"))
-        
-        # we do it here because we want to be sure the items are set not new only if file write completes
-        for item in self.items.values():
-            if item.isRendered():
-                item.setNew(False)
-        
-        self.setDirty(False)
+
         self.projectSaved.emit()
+        self.parent.addProjectFileLog(self.tr('Project file saved!'))
             
     def readConfig(self,data):
         config = json.loads(data)
@@ -95,13 +87,25 @@ class SpatialreportProject(QObject):
             raise ReportProjectParseException(self.tr("Could not load report project"))
 
     def setStep(self,stepNumber,params):
+        '''
+        Set single spte in config file
+        '''
         if not self.ROOTIDENT in self.config:
             self.config[self.ROOTIDENT] = dict()
         self.config[self.ROOTIDENT]['step'+str(stepNumber)] = params
+        if stepNumber == 3:
+            self.full = True
+            self.projectFull.emit()
 
     def getConfig(self):
         return self.config[self.ROOTIDENT]
-    
+
+    def getWriteableConfig(self):
+        return self._config
+
+    def getWriteableConfigStep(self,stepNumber):
+        return self.getWriteableConfig()['step'+stepNumber]
+
     def setFilePath(self,filepath):
         filepath_noext,ext = os.path.splitext(filepath)
         if ext != '' or ext != self.EXTENSION:
@@ -109,17 +113,61 @@ class SpatialreportProject(QObject):
         self.filepath = "%s.%s" % (filepath_noext,ext)
         self.projectName = os.path.basename(self.filepath)
 
+    def forSerializeStepCommon(self,stepNumber):
+        if not self.ROOTIDENT in self._config:
+          self._config[self.ROOTIDENT] = dict()
+        step = 'step'+str(stepNumber)
+        if not step in self._config[self.ROOTIDENT]:
+            self._config[self.ROOTIDENT][step] = dict()
+
     def forSerializeStep0(self):
-        self._config = self.config.copy()
+        self.forSerializeStepCommon(0)
+        self._config[self.ROOTIDENT]['step0']['title'] = self.config[self.ROOTIDENT]['step0']['title']
         self._config[self.ROOTIDENT]['step0']['originLayerSelect'] = self.config[self.ROOTIDENT]['step0']['originLayerSelect'].originalName()
         self._config[self.ROOTIDENT]['step0']['targetLayerSelect'] = self.config[self.ROOTIDENT]['step0']['targetLayerSelect'].originalName()
 
-    def writeConfig(self):        
-        #for serilize step1
-        self.forSerializeStep0()
-        print self._config
+    def forSerializeStep1(self):
+        self._config[self.ROOTIDENT]['step1'] = self.config[self.ROOTIDENT]['step1'].copy()
+
+    def forSerializeStep2(self):
+        self._config[self.ROOTIDENT]['step2'] = self.config[self.ROOTIDENT]['step2'].copy()
+        for typeLayer in ('originLayerFields','targetLayerFields'):
+            self._config[self.ROOTIDENT]['step2'][typeLayer] = list()
+            for f in self.config[self.ROOTIDENT]['step2'][typeLayer].values():
+                self._config[self.ROOTIDENT]['step2'][typeLayer].append({'name':f.name(),'typeName':f.typeName(),'length':f.length(),'precision':f.precision()})
+
+    def forSerializeStep3(self):
+        self._config[self.ROOTIDENT]['step3'] = self.config[self.ROOTIDENT]['step3'].copy()
+        del(self._config[self.ROOTIDENT]['step3']['outputPostgis']['PSQL'])
+
+
+    def loadConfigData(self):
+        self.parent.projectFileStatusBrowser.clear()
+        self.parent.addProjectFileLog(self.tr('<h2>Starting load file ...</h2>'))
+        for stepNumber in range(0,4):
+           if hasattr(self.parent,'loadStep'+str(stepNumber)):
+                getattr(self.parent,'loadStep'+str(stepNumber))()
+        if not self.loadingError:
+            self.parent.addProjectFileLog(self.tr('<h2>File loaded with success!</h2>'))
+        else:
+            self.parent.addProjectFileLog(self.tr('<h2 style="color:#FF0000;">Some errors on loading file!</h2>'))
+
+
+
+    def writeConfig(self):
+        '''
+        Put data in a dict(self._config) that can be serilized by json.dump method
+        '''
+        #serialize step
+        for stepNumber in range(0,4):
+            if hasattr(self,'forSerializeStep'+str(stepNumber)):
+                getattr(self,'forSerializeStep'+str(stepNumber))()
 
     def close(self):
         pass
+
+    def __getattr__(self, name):
+        if name.startswith('getWriteableConfigStep'):
+            return self.getWriteableConfigStep(name[-1])
         
         

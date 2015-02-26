@@ -71,7 +71,7 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     def __init__(self, parent=None,iface=None):
         super(ARPAP_SpatialReportDialog, self).__init__(parent)
         self.iface = iface
-        self.project = SpatialreportProject(self.iface)
+        self.project = SpatialreportProject(self.iface,parent=self)
         self.PSQL = arpap_spatialreport_psql(self.iface)
         self.setupUi(self)
         self.manageGui()
@@ -86,6 +86,9 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         self.forwardButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/forward.png'))
         self.backButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/back.png'))
         self.runButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/run.png'))
+        self.projectFileButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/mActionFileOpen.svg'))
+        self.saveProjectFileButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/mActionFileSave.png'))
+        self.loadProjectFileButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/upload.svg'))
         self.openChartDialogButton.setIcon(QtGui.QIcon(':/plugins/ARPAP_SpatialReport/icons/histogram.png'))
         self.risbaLogo.setPixmap(QtGui.QPixmap(':/plugins/ARPAP_SpatialReport/icons/risba_logo.jpg'))
         self.arpaLogo.setPixmap(QtGui.QPixmap(':/plugins/ARPAP_SpatialReport/icons/arpa_low_logo.tif'))
@@ -107,12 +110,31 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         QObject.connect(self.outputShapeFileButton, SIGNAL('clicked()'),self.openOutputShapeFileDialog)
         QObject.connect(self.outputSpatialiteButton, SIGNAL('clicked()'),self.openOutputSpatialiteDialog)
         QObject.connect(self.dbConnectionSelect, SIGNAL('currentIndexChanged(int)'),self.populateDbSchema)
+        QObject.connect(self.saveProjectFileButton, SIGNAL('clicked()'),self.saveProject)
+        QObject.connect(self.loadProjectFileButton, SIGNAL('clicked()'),self.loadProject)
+        QObject.connect(self.projectFile, SIGNAL('textChanged(QString)'),self.setEnableButtonIO)
         self.populateCombosOutputType()
         self.populateCombosDbConnection()
         QObject.connect(self.selectOutputType, SIGNAL('currentIndexChanged(int)'),self.showOutputForm)
+        QObject.connect(self.projectFileButton, SIGNAL('clicked()'),self.openProjectFileDialog)
         QObject.connect(self.openChartDialogButton, SIGNAL('clicked()'),self.openChartDialog)
+        QObject.connect(self.project, SIGNAL('projectFull()'),self.setEnableButtonIO)
         
-    
+    def setEnableButtonIO(self):
+        if self.projectFile.text():
+            if self.project.full:
+                self.saveProjectFileButton.setEnabled(True)
+            self.loadProjectFileButton.setEnabled(True)
+        else:
+            self.saveProjectFileButton.setEnabled(False)
+            self.loadProjectFileButton.setEnabled(False)
+
+    def saveProject(self):
+        self.project.save(self.projectFile.text())
+
+    def loadProject(self):
+        self.project.open(self.projectFile.text())
+
     def changeIndex(self,incrementValue):
         """
         Change step manager
@@ -262,6 +284,9 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     
     def addRuntimeStepLog(self,runtimeStepLog):
         self.runtimeStepBrowser.append(runtimeStepLog)
+
+    def addProjectFileLog(self,logErrorMessage,type='log'):
+        self.projectFileStatusBrowser.append(logErrorMessage)
         
     def showValidateErrors(self):
         QtGui.QMessageBox.warning( self, self.tr("ARPA Spatial Report"), self.tr( "Validation error:\n" ) + ';\n'.join(self.validation.getErrors()) )
@@ -320,6 +345,88 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         if str(stepNumber) in data:
             return data[str(stepNumber)]
 
+    def loadStep0(self):
+        #get data from _config
+        self.addProjectFileLog(self.tr('<span style="color:#0000FF;"><b>Loading Step 0 data ...</b></span>  '))
+        data = self.project.getWriteableConfigStep0
+        layers = getVectorLayers()
+        layersName = map(lambda l : l.originalName(),layers)
+        if data['originLayerSelect'] in layersName:
+            layer = layers[layersName.index(data['originLayerSelect'])]
+            self.originLayerSelect.setCurrentIndex(self.originLayerSelect.findData(layer))
+            self.addProjectFileLog(self.tr('Loaded Origin Layer')+': '+data['originLayerSelect'])
+        else:
+            self.project.loadingError = True
+            self.addProjectFileLog(self.tr('<span style="color:#FF0000;"><b>Origin Layer('+data['originLayerSelect']+') not present in the current qgis project, please load the layer and load file project again</b></span>'))
+
+        if data['targetLayerSelect'] in layersName:
+            layer = layers[layersName.index(data['targetLayerSelect'])]
+            self.targetLayerSelect.setCurrentIndex(self.targetLayerSelect.findData(layer))
+            self.addProjectFileLog(self.tr('Loaded Target Layer')+': '+data['targetLayerSelect'])
+        else:
+            self.project.loadingError = True
+            self.addProjectFileLog(self.tr('<span style="color:#FF0000;"><b>Target Layer('+data['targetLayerSelect']+') not present in the current qgis project, please load the layer and load file project again</b></span>'))
+
+    def loadStep1(self):
+        #get data from _config
+        self.addProjectFileLog(self.tr('<span style="color:#0000FF;"><b>Loading Step 1 data ...</b></span>'))
+        data = self.project.getWriteableConfigStep1
+        if data['geoprocessingTypeData'] in self.radioGeoprocessingSelectionButtons:
+            rbutton = 'geoprocessing' + data['geoprocessingTypeData'] + 'Radio'
+            getattr(self,rbutton).setChecked(True)
+            self.addProjectFileLog(self.tr('Loaded geometry type operation')+': '+data['geoprocessingTypeData'])
+        else:
+            self.project.loadingError = True
+            self.addProjectFileLog(self.tr('<span style="color:#FF0000;"><b>Geoprocessing type not possible: </b></span>')+'<b>'+data['geoprocessingTypeData']+'</b>')
+
+    def loadStep2(self):
+        #get data from _config
+        self.addProjectFileLog(self.tr('<span style="color:#0000FF;"><b>Loading Step 2 data ...</b></span>'))
+        data = self.project.getWriteableConfigStep2
+        #we load only new fields
+
+    def loadStep3(self):
+        #get data from _config
+        self.addProjectFileLog(self.tr('<span style="color:#0000FF;"><b>Loading Step 3 data ...</b></span>'))
+        data = self.project.getWriteableConfigStep3
+        if data['selectOutputType'] == self.outputItemsSelect[2]:
+            #POSTIGS
+            #check if db connection is present
+            conn = self.PSQL.getConnections()
+            if data['outputPostgis']['connection'] in conn:
+                #select the connection
+                self.selectOutputType.setCurrentIndex(self.selectOutputType.findText(self.outputItemsSelect[2]))
+                self.dbConnectionSelect.setCurrentIndex(self.dbConnectionSelect.findText(data['outputPostgis']['connection']))
+                self.dbSchemaSelect.setCurrentIndex(self.dbSchemaSelect.findText(data['outputPostgis']['schema']))
+                self.tableName.setText(data['outputPostgis']['table'])
+                self.geoColumnName.setText(data['outputPostgis']['geoColumn'])
+                if data['outputPostgis']['overwrite']:
+                    self.overwriteTableCheckBox.setChecked(True)
+                if data['outputPostgis']['spatialIndex']:
+                    self.spatialIndexCheckBox.setChecked(True)
+                self.addProjectFileLog(self.tr('Loaded Postgis output settings'))
+            else:
+                self.project.loadingError = True
+                self.addProjectFileLog(self.tr('<span style="color:#FF0000;"><b>Database connection not present in yoour connections, please add connection e load config file again </b></span>')+'<b>'+data['outputPostgis']['connection']+'</b>')
+        elif data['selectOutputType'] == self.outputItemsSelect[1]:
+            #SPATIALLITE
+            #check basename
+            if os.path.exists(os.path.dirname(data['outputSpatialite'])):
+                self.outputSpatialite.setText(data['outputSpatialite'])
+                self.addProjectFileLog(self.tr('Loaded Spatialite output settings')+' - '+data['outputSpatialite'])
+            else:
+                self.project.loadingError = True
+                self.addProjectFileLog(self.tr('<span style="color:#FF0000;"><b>Directory not exists: </b></span>')+'<b>'+os.path.dirname(data['outputSpatialite'])+'</b>')
+        else:
+            #SHAPE FILE
+            #check basename
+            if os.path.exists(os.path.dirname(data['outputShapeFile'])):
+                self.outputShapeFile.setText(data['outputShapeFile'])
+                self.addProjectFileLog(self.tr('Loaded Shape file output settings'))
+            else:
+                self.project.loadingError = True
+                self.addProjectFileLog(self.tr('<span style="color:#FF0000;"><b>Directory not exists: </b></span>')+'<b>'+os.path.dirname(data['outputShapeFile'])+'</b>')
+
     
     def getPostgisOutputValues(self):
         return {
@@ -335,8 +442,6 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
     def createRuntimeStepLog(self):
         #take current inputs values
         currentInputValues = self.project.getConfig()
-        self.project.writeConfig()
-        print currentInputValues
         self.runtimeStepBrowser.clear()
         self.addRuntimeStepLog("<h3 style='border-style:dotted; border-color:red;'><u>1) %s:</u></h3>" % currentInputValues['step0']['title'])
         self.addRuntimeStepLog("<span>ORIGIN LAYER: %s (<b>%s</b>)[Provider:%s, Epsg:%s] </span>" % (currentInputValues['step0']['originLayerSelect'].name(),getVectorTypeAsString(currentInputValues['step0']['originLayerSelect']),currentInputValues['step0']['originLayerSelect'].dataProvider().storageType(),str(currentInputValues['step0']['originLayerSelect'].crs().postgisSrid())))
@@ -386,7 +491,6 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         if result == QtGui.QDialog.Accepted:
             if fieldCalculatorDialog.mUpdateExistingGroupBox.isChecked():
                 #find row field in tableview
-                #print fieldCalculatorDialog.mExistingFieldComboBox.currentText()
                 row = self.getTebleViewRowNumberByFieldName(fieldCalculatorDialog.mExistingFieldComboBox.currentText(),tableViewName)
                 expressionItem = tableView.model().item(row,4)
                 if expressionItem:
@@ -403,7 +507,7 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
                         'precision':fieldCalculatorDialog.mOutputFieldPrecisionSpinBox.value(),
                         'expression':fieldCalculatorDialog.builder.expressionText()}
                 itemName = QtGui.QStandardItem(fieldCalculatorDialog.mOutputFieldNameLineEdit.text())
-                itemName.setData(QgsField(data['name'],TYPES[fieldCalculatorDialog.mOutputFieldTypeComboBox.currentIndex()],'',int(data['length']),int(data['precision'])))
+                itemName.setData(QgsField(data['name'],TYPES[fieldCalculatorDialog.mOutputFieldTypeComboBox.currentIndex()],fieldCalculatorDialog.mOutputFieldTypeComboBox.currentText(),int(data['length']),int(data['precision'])))
                 itemName.setCheckable(True)
                 itemName.setCheckState(Qt.Checked)
                 itemName.setSelectable(False)
@@ -417,7 +521,6 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
                 model.appendRow([itemName,itemType,itemLength,itemPrecision,itemExpression,actions])
                 removeButton = QtGui.QPushButton(self.tr('Remove'),clicked=self.removeTableFieldsRow)
                 tableView.setIndexWidget(actions.index(),removeButton)
-                print actions.index()
                 self.removeButtons[id(removeButton)] = actions.index()
                 
     
@@ -433,6 +536,13 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         if outputShapeFile is None or encoding is None:
           return
         self.outputShapeFile.setText( outputShapeFile )
+
+    def openProjectFileDialog(self):
+        self.projectFile.clear()
+        ( projectFile, encoding ) = self._openSaveDialog(self,mode='save',saveDefaultSuffix=self.project.EXTENSION,filtering="Project files (*.qrp)")
+        if projectFile is None or encoding is None:
+          return
+        self.projectFile.setText( projectFile )
     
     def openOutputSpatialiteDialog(self):
         self.outputSpatialite.clear()
