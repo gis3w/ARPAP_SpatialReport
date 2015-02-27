@@ -31,7 +31,7 @@ class ARPAP_SpatialReportDialogTest(unittest.TestCase):
 
     def test_icon_png(self):
         """Test we can click OK."""
-        path = ':/plugins/ARPAP_SpatialReport/icon.png'
+        path = ':/plugins/ARPAP_SpatialReport/icon/icon2.png'
         icon = QIcon(path)
         self.assertFalse(icon.isNull())
 

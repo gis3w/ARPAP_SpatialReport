@@ -135,6 +135,7 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         self.project.save(self.projectFile.text())
 
     def loadProject(self):
+        self.project.loadingError = False
         self.project.open(self.projectFile.text())
 
     def changeIndex(self,incrementValue):
@@ -361,21 +362,23 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         data = self.project.getWriteableConfigStep0
         layers = getVectorLayers()
         layersName = map(lambda l : l.originalName(),layers)
+        self.tableViewOriginLayerFields.model().clear()
         if data['originLayerSelect'] in layersName:
             layer = layers[layersName.index(data['originLayerSelect'])]
             self.originLayerSelect.setCurrentIndex(self.originLayerSelect.findData(layer))
             self.addProjectFileLog(self.tr('Loaded Origin Layer')+': '+data['originLayerSelect'])
         else:
             self.project.loadingError = True
-            self.addProjectFileLog(self.tr('<span style="color:#FF0000;"><b>Origin Layer('+data['originLayerSelect']+') not present in the current qgis project, please load the layer and load file project again</b></span>'))
+            self.addProjectFileLog(self.tr('<span style="color:#FF0000;"><b>Origin Layer(')+data['originLayerSelect']+self.tr(') not present in the current qgis project, please load the layer and load file project again</b></span>'))
 
+        self.tableViewTargetLayerFields.model().clear()
         if data['targetLayerSelect'] in layersName:
             layer = layers[layersName.index(data['targetLayerSelect'])]
             self.targetLayerSelect.setCurrentIndex(self.targetLayerSelect.findData(layer))
             self.addProjectFileLog(self.tr('Loaded Target Layer')+': '+data['targetLayerSelect'])
         else:
             self.project.loadingError = True
-            self.addProjectFileLog(self.tr('<span style="color:#FF0000;"><b>Target Layer('+data['targetLayerSelect']+') not present in the current qgis project, please load the layer and load file project again</b></span>'))
+            self.addProjectFileLog(self.tr('<span style="color:#FF0000;"><b>Target Layer(')+data['targetLayerSelect']+self.tr(') not present in the current qgis project, please load the layer and load file project again</b></span>'))
 
     def loadStep1(self):
         #get data from _config
@@ -400,18 +403,22 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             layerFieldsToCheckExpression = [f['name'] for f in data[olfName] if f['origin'] == 'layer' and 'expression' in f]
             tableView = getattr(self,table)
             model = tableView.model()
-            for r in range(model.rowCount()):
-                item = model.item(r,0)
-                if not item.text() in layerFieldsToCheck:
-                    item.setCheckState(Qt.Unchecked)
-                elif item.text() in layerFieldsToCheckExpression:
-                    expression = [f for f in data[olfName] if f['name'] == item.text()][0]['expression']
-                    expressionItem = QtGui.QStandardItem(expression)
-                    model.setItem(r,4,expressionItem)
-            #add expression fields
-            for f in [f for f in data[olfName] if f['origin'] == 'expression']:
-                f['type'] = f['typeName']
-                self.addExpressionField(tableView,f)
+            if model.rowCount() > 0:
+                for r in range(model.rowCount()):
+                    item = model.item(r,0)
+                    if not item.text() in layerFieldsToCheck:
+                        item.setCheckState(Qt.Unchecked)
+                    elif item.text() in layerFieldsToCheckExpression:
+                        expression = [f for f in data[olfName] if f['name'] == item.text()][0]['expression']
+                        expressionItem = QtGui.QStandardItem(expression)
+                        model.setItem(r,4,expressionItem)
+                #add expression fields
+                for f in [f for f in data[olfName] if f['origin'] == 'expression']:
+                    f['type'] = f['typeName']
+                    self.addExpressionField(tableView,f)
+            else:
+                self.addProjectFileLog(self.tr('<span style="color:#FF0000;"><b>Fields of ')+ typeLayer +self.tr(' not load</b></span>'))
+
 
 
 
@@ -481,10 +488,10 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         self.addRuntimeStepLog("<h3><u>3) %s:</u></h3>" % currentInputValues['step2']['title'])
         self.addRuntimeStepLog("<h4>Origin Layer Fields:</h4>")
         for f in currentInputValues['step2']['originLayerFields'].values():
-            self.addRuntimeStepLog("%s" % f.name())
+            self.addRuntimeStepLog(self.formatFieldToString(f))
         self.addRuntimeStepLog("<h4>Target Layer Fields:</h4>")
         for f in currentInputValues['step2']['targetLayerFields'].values():
-            self.addRuntimeStepLog("%s" % f.name())
+            self.addRuntimeStepLog(self.formatFieldToString(f))
         self.addRuntimeStepLog("<h3><u>4) %s:</u></h3>" % currentInputValues['step3']['title'])
         self.addRuntimeStepLog("<span>OUTPUT TYPE: <b>%s</b> </span>" % (currentInputValues['step3']['selectOutputType']))
         if self.getOutputType() == 'Shape File':
@@ -498,7 +505,12 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             self.addRuntimeStepLog("<span>Geo column: <b>%s</b> </span>" % (currentInputValues['step3']['outputPostgis']['geoColumn']))
         
         
-    
+    def formatFieldToString(self,f):
+        '''
+        Format filed properties for human read
+        '''
+        return "%s (%s, %s, %s)" % (f.name(),f.typeName(),f.length(),f.precision())
+
     def openFieldCalculatorOrigin(self):
         self.openFieldCalculator('origin')
     

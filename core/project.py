@@ -151,14 +151,14 @@ class SpatialreportProject(QObject):
 
     def loadConfigData(self):
         self.parent.projectFileStatusBrowser.clear()
-        self.parent.addProjectFileLog(self.tr('<h2>Starting load file ...</h2>'))
+        self.parent.addProjectFileLog(self.tr('<h3>Starting load file ...</h3>'))
         for stepNumber in range(0,4):
            if hasattr(self.parent,'loadStep'+str(stepNumber)):
                 getattr(self.parent,'loadStep'+str(stepNumber))()
         if not self.loadingError:
-            self.parent.addProjectFileLog(self.tr('<h2>File loaded with success!</h2>'))
+            self.parent.addProjectFileLog(self.tr('<h3>File loaded with success!</h3>'))
         else:
-            self.parent.addProjectFileLog(self.tr('<h2 style="color:#FF0000;">Some errors on loading file!</h2>'))
+            self.parent.addProjectFileLog(self.tr('<h3 style="color:#FF0000;">Some errors on loading file!</h3>'))
 
 
 

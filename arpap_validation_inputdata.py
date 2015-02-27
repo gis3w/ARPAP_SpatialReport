@@ -109,7 +109,7 @@ class ValidationInputdata():
             if not self.dlg.getSelectedListViewItem('category') or not itemValue:
                 toRes = False
                 self.errorMessages.append(self.tr('For Pie chart type, you have to select a Category combobox item and a Value combobox item'))
-            if itemValue.data().typeName() not in ('Integer','Double','Real'):
+            elif itemValue.data().typeName() not in ('Integer','Double','Real'):
                 toRes = False
                 self.errorMessages.append(self.tr('For Pie chart type, you have to select a numeric Value combobox item'))
         return toRes      

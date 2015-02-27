@@ -27,7 +27,7 @@ import os
 import sys
 from PyQt4 import QtGui, uic
 from PyQt4.QtWebKit import QGraphicsWebView
-from PyQt4.QtCore import QObject,SIGNAL, Qt, QVariant, QUrl, QSize
+from PyQt4.QtCore import QObject,SIGNAL, Qt, QVariant, QUrl, QSize,QDate,QPyNullVariant
 from qgis.core import *
 from qgis.gui import *
 from arpap_validation_inputdata import ValidationInputdata
@@ -107,13 +107,19 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
         self.categoryFieldListView.setModel(self.modelCategory)
         self.valueFieldListView.setModel(self.modelValue)
         for field in layer.pendingFields():
-            itemCategory = QtGui.QStandardItem(field.name())
+            itemCategory = QtGui.QStandardItem(self.parent.formatFieldToString(field))
             itemCategory.setData(field)
-            itemValue = QtGui.QStandardItem(field.name())
+            itemValue = QtGui.QStandardItem(self.parent.formatFieldToString(field))
             itemValue.setData(field)
             self.modelCategory.appendRow(itemCategory)
             self.modelValue.appendRow(itemValue)
-        
+
+    def _purificateValues(self,value):
+        if type(value) == QDate:
+            value = value.toString()
+        elif type(value) == QPyNullVariant:
+            value = None
+        return value
 
     def generateChart(self):
         scene = QtGui.QGraphicsScene()
@@ -149,7 +155,7 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
         features = layer.getFeatures()
         occourences = dict()
         for f in features:
-            value = f.attribute(categoryItem.text())
+            value = self._purificateValues(f.attribute(categoryItem.data().name()))
             if value not in occourences:
                 occourences[value] = 0
             occourences[value] += 1 
@@ -165,10 +171,10 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
         occourences = dict()
         totValue = 0
         for f in features:
-            key = f.attribute(categoryItem.text()) 
+            key = f.attribute(categoryItem.data().name())
             if not key:
                 key = self.tr('Unknown')
-            value = f.attribute(valueItem.text())
+            value = self._purificateValues(f.attribute(valueItem.data().name()))
             if key not in occourences:
                 occourences[key] = 0
             if not value:
@@ -186,10 +192,10 @@ class ARPAP_SpatialReportDialogChart(QtGui.QDialog, FORM_CLASS):
         features = layer.getFeatures()
         occourences = dict()
         for f in features:
-            key = f.attribute(categoryItem.text()) 
+            key = self._purificateValues(f.attribute(categoryItem.data().name()))
             if not key:
                 key = self.tr('Unknown')
-            value = f.attribute(valueItem.text())
+            value = self._purificateValues(f.attribute(valueItem.data().name()))
             if key not in occourences:
                 occourences[key] = list()
             if not value:
