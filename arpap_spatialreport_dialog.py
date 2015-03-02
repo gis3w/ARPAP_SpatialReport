@@ -362,7 +362,9 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         data = self.project.getWriteableConfigStep0
         layers = getVectorLayers()
         layersName = map(lambda l : l.originalName(),layers)
-        self.tableViewOriginLayerFields.model().clear()
+        modelOriginFields = self.tableViewOriginLayerFields.model()
+        if not modelOriginFields == None:
+            modelOriginFields.clear()
         if data['originLayerSelect'] in layersName:
             layer = layers[layersName.index(data['originLayerSelect'])]
             self.originLayerSelect.setCurrentIndex(self.originLayerSelect.findData(layer))
@@ -371,7 +373,9 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             self.project.loadingError = True
             self.addProjectFileLog(self.tr('<span style="color:#FF0000;"><b>Origin Layer(')+data['originLayerSelect']+self.tr(') not present in the current qgis project, please load the layer and load file project again</b></span>'))
 
-        self.tableViewTargetLayerFields.model().clear()
+        modelTargetFields = self.tableViewTargetLayerFields.model()
+        if not modelTargetFields == None:
+            modelTargetFields.clear()
         if data['targetLayerSelect'] in layersName:
             layer = layers[layersName.index(data['targetLayerSelect'])]
             self.targetLayerSelect.setCurrentIndex(self.targetLayerSelect.findData(layer))
@@ -403,7 +407,7 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             layerFieldsToCheckExpression = [f['name'] for f in data[olfName] if f['origin'] == 'layer' and 'expression' in f]
             tableView = getattr(self,table)
             model = tableView.model()
-            if model.rowCount() > 0:
+            if model != None and model.rowCount() > 0:
                 for r in range(model.rowCount()):
                     item = model.item(r,0)
                     if not item.text() in layerFieldsToCheck:
