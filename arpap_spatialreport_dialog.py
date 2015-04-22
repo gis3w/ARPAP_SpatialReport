@@ -449,6 +449,10 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
             else:
                 self.project.loadingError = True
                 self.addProjectFileLog(self.tr('<span style="color:#FF0000;"><b>Database connection not present in yoour connections, please add connection e load config file again </b></span>')+'<b>'+data['outputPostgis']['connection']+'</b>')
+                #show database connection details
+                self.addProjectFileLog('<b>Connection:</b>' + data['outputPostgis']['connection'])
+                self.addProjectFileLog('<b>Spatial index:</b>' + data['outputPostgis']['connection'])
+
         elif data['selectOutputType'] == self.outputItemsSelect[1]:
             #SPATIALLITE
             #check basename

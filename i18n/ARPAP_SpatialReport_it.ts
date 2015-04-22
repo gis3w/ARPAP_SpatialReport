@@ -35,112 +35,112 @@
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="344"/>
         <source>Selection fields</source>
-        <translation type="unfinished">Selezione dei campi</translation>
+        <translation type="finished">Selezione dei campi</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="349"/>
         <source>Selection Output</source>
-        <translation type="unfinished">Selezione del formato di uscita</translation>
+        <translation type="finished">Selezione del formato di uscita</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="568"/>
         <source>Remove</source>
-        <translation type="unfinished">Rimuovi</translation>
+        <translation type="finished">Rimuovi</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="303"/>
         <source>ARPA Spatial Report</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished"></translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="361"/>
         <source>&lt;span style=&quot;color:#0000FF;&quot;&gt;&lt;b&gt;Loading Step 0 data ...&lt;/b&gt;&lt;/span&gt;  </source>
-        <translation type="unfinished"></translation>
+        <translation type="finished"></translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="369"/>
         <source>Loaded Origin Layer</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished">Layer origin caricato</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="372"/>
         <source>&lt;span style=&quot;color:#FF0000;&quot;&gt;&lt;b&gt;Origin Layer(</source>
-        <translation type="unfinished"></translation>
+        <translation type="ufinished"></translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="381"/>
         <source>) not present in the current qgis project, please load the layer and load file project again&lt;/b&gt;&lt;/span&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished">non è presente nel progetto di qgis, carica il layer e carica di nuovo il file progetto</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="378"/>
         <source>Loaded Target Layer</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished">Layer target caricato</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="381"/>
         <source>&lt;span style=&quot;color:#FF0000;&quot;&gt;&lt;b&gt;Target Layer(</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished"></translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="385"/>
         <source>&lt;span style=&quot;color:#0000FF;&quot;&gt;&lt;b&gt;Loading Step 1 data ...&lt;/b&gt;&lt;/span&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished"></translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="390"/>
         <source>Loaded geometry type operation</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished">Tipo di operazione geometrica caricata</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="393"/>
         <source>&lt;span style=&quot;color:#FF0000;&quot;&gt;&lt;b&gt;Geoprocessing type not possible: &lt;/b&gt;&lt;/span&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished">&lt;span style=&quot;color:#FF0000;&quot;&gt;&lt;b&gt;Tipo geometrica non possibile: &lt;/b&gt;&lt;/span&gt;</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="397"/>
         <source>&lt;span style=&quot;color:#0000FF;&quot;&gt;&lt;b&gt;Loading Step 2 data ...&lt;/b&gt;&lt;/span&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished"></translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="420"/>
         <source>&lt;span style=&quot;color:#FF0000;&quot;&gt;&lt;b&gt;Fields of </source>
-        <translation type="unfinished"></translation>
+        <translation type="finished">&lt;span style=&quot;color:#FF0000;&quot;&gt;&lt;b&gt;Campi del</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="420"/>
         <source> not load&lt;/b&gt;&lt;/span&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished"> non caricati&lt;/b&gt;&lt;/span&gt;</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="427"/>
         <source>&lt;span style=&quot;color:#0000FF;&quot;&gt;&lt;b&gt;Loading Step 3 data ...&lt;/b&gt;&lt;/span&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished"></translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="444"/>
         <source>Loaded Postgis output settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished">Uscita Postigis caricata</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="447"/>
         <source>&lt;span style=&quot;color:#FF0000;&quot;&gt;&lt;b&gt;Database connection not present in yoour connections, please add connection e load config file again &lt;/b&gt;&lt;/span&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished">&lt;span style=&quot;color:#FF0000;&quot;&gt;&lt;b&gt;Connessione al Database non presente, aggiungi la connessione richiesta e ricarica il file di progetto &lt;/b&gt;&lt;/span&gt;</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="453"/>
         <source>Loaded Spatialite output settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished">Uscita Spatialite caricata</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="465"/>
         <source>&lt;span style=&quot;color:#FF0000;&quot;&gt;&lt;b&gt;Directory not exists: &lt;/b&gt;&lt;/span&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished">&lt;span style=&quot;color:#FF0000;&quot;&gt;&lt;b&gt;Directory non esiste: &lt;/b&gt;&lt;/span&gt;</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog.py" line="462"/>
         <source>Loaded Shape file output settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished">Uscita Shape file caricata</translation>
     </message>
 </context>
 <context>
@@ -198,12 +198,12 @@
     <message>
         <location filename="arpap_spatialreport_dialog_base.ui" line="395"/>
         <source>Origin layer fields</source>
-        <translation type="obsolete">Campi layer sorgente</translation>
+        <translation type="finished">Campi layer sorgente</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog_base.ui" line="467"/>
         <source>Target layer fields</source>
-        <translation type="obsolete">Campi layer target</translation>
+        <translation type="finished">Campi layer target</translation>
     </message>
     <message>
         <location filename="arpap_spatialreport_dialog_base.ui" line="542"/>
@@ -381,12 +381,12 @@
     <message>
         <location filename="ui_qgsfieldcalculatorbase.py" line="139"/>
         <source>Output field name</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished">Nome del campo in uscita</translation>
     </message>
     <message>
         <location filename="ui_qgsfieldcalculatorbase.py" line="140"/>
         <source>Output field width</source>
-        <translation type="unfinished"></translation>
+        <translation type="ufinished">Grandezza del campo in uscita</translation>
     </message>
     <message>
         <location filename="ui_qgsfieldcalculatorbase.py" line="141"/>
@@ -396,12 +396,12 @@
     <message>
         <location filename="ui_qgsfieldcalculatorbase.py" line="142"/>
         <source>Output field type</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished">Tipo di campo in uscita</translation>
     </message>
     <message>
         <location filename="ui_qgsfieldcalculatorbase.py" line="143"/>
         <source>Precision</source>
-        <translation type="unfinished"></translation>
+        <translation type="finished">Precisione</translation>
     </message>
 </context>
 <context>
@@ -409,37 +409,37 @@
     <message>
         <location filename="project.py" line="59"/>
         <source>File %s does not exists</source>
-        <translation type="obsolete">Il file %s non esiste</translation>
+        <translation type="finished">Il file %s non esiste</translation>
     </message>
     <message>
         <location filename="project.py" line="71"/>
         <source>Starting save file ...</source>
-        <translation type="obsolete">Inizio salvatazzio file ...</translation>
+        <translation type="finished">Inizio salvatazzio file ...</translation>
     </message>
     <message>
         <location filename="project.py" line="81"/>
         <source>Project file saved!</source>
-        <translation type="obsolete">File progetto salvato!</translation>
+        <translation type="finished">File progetto salvato!</translation>
     </message>
     <message>
         <location filename="project.py" line="88"/>
         <source>Could not load report project</source>
-        <translation type="obsolete">File progetto non caricato</translation>
+        <translation type="finished">File progetto non caricato</translation>
     </message>
     <message>
         <location filename="project.py" line="154"/>
         <source>&lt;h3&gt;Starting load file ...&lt;/h3&gt;</source>
-        <translation type="obsolete">&lt;h3&gt;Inizio caricamento file ...&lt;/h3&gt;</translation>
+        <translation type="finished">&lt;h3&gt;Inizio caricamento file ...&lt;/h3&gt;</translation>
     </message>
     <message>
         <location filename="project.py" line="159"/>
         <source>&lt;h3&gt;File loaded with success!&lt;/h3&gt;</source>
-        <translation type="obsolete">&lt;h3&gt;File caricato con sucesso!&lt;/h3&gt;</translation>
+        <translation type="finished">&lt;h3&gt;File caricato con sucesso!&lt;/h3&gt;</translation>
     </message>
     <message>
         <location filename="project.py" line="161"/>
         <source>&lt;h3 style=&quot;color:#FF0000;&quot;&gt;Some errors on loading file!&lt;/h3&gt;</source>
-        <translation type="obsolete">&lt;h3 style=&quot;color:#FF0000;&quot;&gt;Alcuni errori durante il caricamento del file!&lt;/h3&gt;</translation>
+        <translation type="finished">&lt;h3 style=&quot;color:#FF0000;&quot;&gt;Alcuni errori durante il caricamento del file!&lt;/h3&gt;</translation>
     </message>
 </context>
 <context>
@@ -477,7 +477,7 @@
     <message>
         <location filename="arpap_validation_inputdata.py" line="111"/>
         <source>For Pie chart type, you have to select a Category combobox item and a Value combobox item</source>
-        <translation type="unfinished">Per il grafico a torta, devi selezionare un elemento dal combobox categoria e uno dal combobox valore</translation>
+        <translation type="finished">Per il grafico a torta, devi selezionare un elemento dal combobox categoria e uno dal combobox valore</translation>
     </message>
     <message>
         <location filename="arpap_validation_inputdata.py" line="67"/>
