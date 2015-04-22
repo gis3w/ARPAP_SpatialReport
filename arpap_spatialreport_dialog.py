@@ -145,7 +145,8 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         if (self.getValidationStep(self.stackedWidget.currentIndex()) and incrementValue >= 0) or incrementValue < 0:
             self.stackedWidget.setCurrentIndex(self.stackedWidget.currentIndex() + incrementValue)
             if self.stackedWidget.currentIndex() == 1:
-                self.doValidationGeoprocessingDataType()
+                if not self.doValidationGeoprocessingDataType():
+                    return False
             elif self.stackedWidget.currentIndex() == 3:
                 self.showOutputForm(self.selectOutputType.currentIndex())
             elif self.stackedWidget.currentIndex() == 4:
@@ -285,9 +286,15 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         else:
             return True
     
-    def doValidationGeoprocessingDataType(self): 
+    def doValidationGeoprocessingDataType(self):
+        self.backButton.setEnabled(True)
         if not self.validation.geoprocessingDataType():
+            self.forwardButton.setEnabled(False)
             self.showValidateErrors()
+            return False
+        else:
+            self.forwardButton.setEnabled(True)
+            return True
         
     def addLogMessage(self,logMessage):
         self.logBrowser.clear()

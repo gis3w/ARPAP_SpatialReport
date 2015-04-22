@@ -118,5 +118,8 @@ class ValidationInputdata():
         geoprocessingType = self.dlg.getGeoprocessingTypeData()
         originLayerType = getVectorTypeAsString(self.dlg.getComboboxData('originLayerSelect'))
         targetLayerType = getVectorTypeAsString(self.dlg.getComboboxData('targetLayerSelect'))
-        return self.matrixRulesGeoprocessing[geoprocessingType][self.matrixRulesGeoprocessing['mapping'][originLayerType]][self.matrixRulesGeoprocessing['mapping'][targetLayerType]]
+        ret = self.matrixRulesGeoprocessing[geoprocessingType][self.matrixRulesGeoprocessing['mapping'][originLayerType]][self.matrixRulesGeoprocessing['mapping'][targetLayerType]]
+        if not ret:
+            self.errorMessages.append(self.tr('Sorry but is not possible "%s" from %s versus %s') % (geoprocessingType,originLayerType,targetLayerType))
+        return ret
             

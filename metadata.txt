@@ -10,7 +10,7 @@
 name=ARPAP SpatialReport
 qgisMinimumVersion=2.6
 description=Execute geoprocessing operation, Intersection Contains and Touch between two vector layers. Is possible choose fields resuslts add new fields. Output geoprocessing operation can be saved as Shape File, Spatialite or Postgis Table. On the geoprocessing results is possible perform minimal statistic operation and simple bar anche pie chart.
-version=0.9.2
+version=0.9.3
 author=Walter Lorenzetti GIS3W
 email=lorenzetti@gis3w.it
 
