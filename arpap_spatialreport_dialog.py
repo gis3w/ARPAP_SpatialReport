@@ -34,7 +34,7 @@ __revision__ = '$Format:%H$'
 import os
 import sys
 from PyQt4 import QtGui, uic
-from PyQt4.QtCore import QObject,SIGNAL, Qt
+from PyQt4.QtCore import QObject,SIGNAL, Qt, QFileInfo
 from arpap_validation_inputdata import ValidationInputdata
 from __builtin__ import hasattr, getattr
 from processing.tools.dataobjects import *
@@ -611,12 +611,12 @@ class ARPAP_SpatialReportDialog(QtGui.QDialog, FORM_CLASS):
         fileDialog = QgsEncodingFileDialog( parent, titleDialog, dirName, filtering, encode )
         if mode == 'save':
             fileDialog.setDefaultSuffix( saveDefaultSuffix )
-            fileDialog.setFileMode( QFileDialog.AnyFile )
+            fileDialog.setFileMode( QtGui.QFileDialog.AnyFile )
         else:
-            fileDialog.setFileMode( QFileDialog.ExistingFiles )
-            fileDialog.setAcceptMode( QFileDialog.AcceptOpen )
+            fileDialog.setFileMode( QtGui.QFileDialog.ExistingFiles )
+            fileDialog.setAcceptMode( QtGui.QFileDialog.AcceptOpen )
                 
-        if not fileDialog.exec_() == QDialog.Accepted:
+        if not fileDialog.exec_() == QtGui.QDialog.Accepted:
                 return None, None
         files = fileDialog.selectedFiles()
         settings.setValue(dirNamePath, QFileInfo( unicode( files[0] ) ).absolutePath() )
